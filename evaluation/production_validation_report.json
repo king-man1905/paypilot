@@ -1,0 +1,124 @@
+{
+  "timestamp": "2026-08-25T04:08:55.041494+00:00",
+  "validation_environment": "LOCAL PRODUCTION READINESS VALIDATION / SIMULATION",
+  "overall_status": "PASSED",
+  "total_steps": 13,
+  "passed_steps": 13,
+  "failed_steps": 0,
+  "steps": [
+    {
+      "step": "Docker & Compose Static Configuration Validation",
+      "command": "internal_static_check",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 0.71,
+      "issues": []
+    },
+    {
+      "step": "Pytest Regression Test Suite",
+      "command": "pytest.main(['-q'])",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 78920.03
+    },
+    {
+      "step": "32-case Offline Multi-Agent Evaluation",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/run_evaluation.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 7568.01,
+      "stdout_tail": "l Consistency:\n100.0%\n\nRecommendation Correctness:\n100.0%\n\nResponse Completeness:\n100.0%\n\nAverage Latency:\n145.77 ms\n\nP95 Latency:\n242.34 ms\n\nOverall Pass Rate:\n100.0%\n\nAll benchmark cases PASSED with ZERO failures.\n\nDetailed evaluation report saved to: E:\\paypilot\\evaluation\\evaluation_report.json\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "Configuration & Secret Boundary Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/configuration_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 372.56,
+      "stdout_tail": "ms\n\n==========================================================================================\nConfiguration benchmark report successfully saved to: E:\\paypilot\\evaluation\\configuration_benchmark_report.json\n==========================================================================================\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "Traffic Control & Concurrency Idempotency Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/traffic_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 571.91,
+      "stdout_tail": "5: 0.0039 ms)\nSection E: Quota Normal Check Mean:        0.0023 ms (P95: 0.0024 ms)\nSection F: Queue Saturation Check Mean:    0.0006 ms (P95: 0.0006 ms)\nSection G: Redis Fallback Mean:            0.0013 ms (P95: 0.002 ms)\n============================================================================\n",
+      "stderr_tail": "2026-08-25 09:34:06,910 [INFO] Starting Phase 21 Hardened Traffic Management & Idempotency Benchmark...\n2026-08-25 09:34:06,997 [INFO] Phase 21 Traffic Benchmark Report successfully saved to: E:\\paypilot\\evaluation\\traffic_benchmark_report.json\n"
+    },
+    {
+      "step": "Distributed Job & Multi-Worker Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/distributed_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 39250.37,
+      "stdout_tail": "===============================================================================\nDistributed benchmark report successfully saved to: E:\\paypilot\\evaluation\\distributed_benchmark_report.json\n==============================================================================================================\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "Disaster Recovery & Financial Parity Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/disaster_recovery_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 3438.91,
+      "stdout_tail": "=======================================================================================\nDisaster recovery benchmark report successfully saved to: E:\\paypilot\\evaluation\\disaster_recovery_report.json\n====================================================================================================\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "Distributed Tracing & Overhead Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/tracing_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 43282.78,
+      "stdout_tail": "-----------------------------------------------------------------------------------------\n\n[Phase 3/3] Tracing overhead report successfully saved to: E:\\paypilot\\evaluation\\tracing_benchmark_report.json\n===============================================================================================\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "SLO Evaluation Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/slo_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 9058.27,
+      "stdout_tail": " 10 async jobs\n\n===============================================================================================\nSLO evaluation benchmark report saved to: E:\\paypilot\\evaluation\\slo_benchmark_report.json\n===============================================================================================\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "Async Performance & Latency Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/performance_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 18652.46,
+      "stdout_tail": " P95: 8131.33ms | Throughput: 6.09 req/s\n\n------------------------------------------------------------------------------------------\nPerformance report saved to: E:\\paypilot\\evaluation\\performance_report.json\n==========================================================================================\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "Background Job Throughput Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/job_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 5322.88,
+      "stdout_tail": "an Latency  : 0.001 ms / get_job call\n------------------------------------------------------------------------------------------\nJob benchmark report saved to: E:\\paypilot\\evaluation\\job_benchmark_report.json\n==========================================================================================\n",
+      "stderr_tail": "executive recovery synthesis using NVIDIA LLM.\nRecovery agent generated 2 prioritized actions.\n[job] Background analysis finished in 207.4ms | Intent: 'what_if' | Agents: ['revenue_agent', 'payment_agent', 'recovery_agent'] | Actions: 2\n[worker_b4a75962][job_750a7f9b7e27] Job COMPLETED in 207.57ms.\n"
+    },
+    {
+      "step": "Graceful Shutdown & Drain Microbenchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/shutdown_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 3253.84,
+      "stdout_tail": ": 'completed', 'lost_jobs': 0, 'duplicate_executions': 0}\n - concurrency_counter_integrity: {'scenario': 'concurrency_counter_integrity', 'slots_tested': 3, 'leaked_active_slots': 0, 'counter_integrity_verified': True}\n================================================================================\n",
+      "stderr_tail": "t.jobs.store: [job_86670d4ce3f1] Recovered stale running job lease (worker: worker_crashed_node_1) -> re-claimed by worker_recovery_node_2.\n2026-08-25 09:36:08,816 [INFO] paypilot.benchmark.shutdown: Graceful shutdown benchmark report written to E:\\paypilot\\evaluation\\shutdown_benchmark_report.json\n"
+    },
+    {
+      "step": "Release Engineering & Safe Rollback Benchmark",
+      "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/release_benchmark.py",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 165732.83,
+      "stdout_tail": ": 'faulty_candidate_automatic_rollback', 'action': 'ROLLED_BACK', 'active_version': 'v1.23.0', 'failed_candidate': 'v1.23.1-faulty', 'duration_ms': 5418.013, 'rollback_success': True, 'unhandled_failures': 0}\n==========================================================================================\n",
+      "stderr_tail": "job] Background analysis finished in 156242.01ms | Intent: 'revenue' | Agents: ['revenue_agent', 'payment_agent', 'checkout_agent', 'customer_agent', 'recovery_agent'] | Actions: 4\n2026-08-25 09:38:54,665 [INFO] paypilot.jobs.runner: [worker_7b7cc3dc][job_5651f574e50a] Job COMPLETED in 156242.78ms.\n"
+    }
+  ]
+}

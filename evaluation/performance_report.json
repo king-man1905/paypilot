@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "mode": "OFFLINE_MOCK_LLM",
+    "live_api_calls": false,
+    "timestamp": "2026-08-25T04:45:20Z",
+    "dataset_rows": 15000
+  },
+  "benchmarks": {
+    "single_request": {
+      "count": 1,
+      "total_wall_time_sec": 0.272,
+      "throughput_req_sec": 3.68,
+      "mean_ms": 271.74,
+      "median_ms": 271.74,
+      "p95_ms": 271.74,
+      "p99_ms": 271.74,
+      "min_ms": 271.74,
+      "max_ms": 271.74,
+      "successful": 1,
+      "failed": 0
+    },
+    "sequential_5": {
+      "count": 5,
+      "total_wall_time_sec": 0.429,
+      "throughput_req_sec": 11.64,
+      "mean_ms": 85.9,
+      "median_ms": 52.02,
+      "p95_ms": 165.29,
+      "p99_ms": 165.29,
+      "min_ms": 49.95,
+      "max_ms": 165.29,
+      "successful": 5,
+      "failed": 0
+    },
+    "sequential_10": {
+      "count": 10,
+      "total_wall_time_sec": 0.89,
+      "throughput_req_sec": 11.23,
+      "mean_ms": 89.02,
+      "median_ms": 52.45,
+      "p95_ms": 163.41,
+      "p99_ms": 163.41,
+      "min_ms": 46.5,
+      "max_ms": 163.41,
+      "successful": 10,
+      "failed": 0
+    },
+    "concurrent_10": {
+      "count": 10,
+      "total_wall_time_sec": 1.174,
+      "throughput_req_sec": 8.52,
+      "mean_ms": 878.18,
+      "median_ms": 741.88,
+      "p95_ms": 1171.7,
+      "p99_ms": 1171.7,
+      "min_ms": 699.11,
+      "max_ms": 1171.7,
+      "successful": 10,
+      "failed": 0,
+      "concurrency_level": 10
+    },
+    "concurrent_25": {
+      "count": 25,
+      "total_wall_time_sec": 3.535,
+      "throughput_req_sec": 7.07,
+      "mean_ms": 2144.64,
+      "median_ms": 2178.92,
+      "p95_ms": 3526.81,
+      "p99_ms": 3530.77,
+      "min_ms": 612.52,
+      "max_ms": 3530.77,
+      "successful": 25,
+      "failed": 0,
+      "concurrency_level": 25
+    },
+    "concurrent_50": {
+      "count": 50,
+      "total_wall_time_sec": 6.796,
+      "throughput_req_sec": 7.36,
+      "mean_ms": 3844.11,
+      "median_ms": 3901.06,
+      "p95_ms": 6687.79,
+      "p99_ms": 6788.74,
+      "min_ms": 685.1,
+      "max_ms": 6788.74,
+      "successful": 50,
+      "failed": 0,
+      "concurrency_level": 50
+    }
+  }
+}

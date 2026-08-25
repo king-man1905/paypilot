@@ -1,0 +1,29 @@
+{
+  "benchmark_type": "LOCAL_DISASTER_RECOVERY_SIMULATION",
+  "timestamp": "2026-08-25T04:26:55.478779+00:00",
+  "disclaimer": "Measured locally using SQLite and MockChatNVIDIA. Demonstrates cryptographic integrity, snapshot restore speed, and 100% financial parity under simulated corruption, but does not represent cloud multi-region automated failover.",
+  "dataset_rows": 15000,
+  "backup_duration_ms": 310.02,
+  "backup_size_bytes": 6729728,
+  "verify_duration_ms": 6.86,
+  "restore_duration_ms": 11.12,
+  "parity_audit_duration_ms": 243.64,
+  "financial_parity_pct": 100.0,
+  "duplicate_primary_keys": 0,
+  "post_restore_metrics": {
+    "total_transactions": 15000.0,
+    "total_realized_revenue": 50092576.66,
+    "total_lost_revenue": 10221975.01,
+    "payment_success_rate": 0.8171,
+    "upi_failure_rate": 0.1493,
+    "card_failure_rate": 0.1363,
+    "mobile_conversion_rate": 0.0,
+    "desktop_conversion_rate": 0.8511,
+    "electronics_refund_rate": 0.0,
+    "fashion_refund_amount": 0.0,
+    "what_if_1pct_gain": 627474.86,
+    "what_if_2pct_gain": 1254949.72
+  },
+  "rto_local_measured_ms": 328.0,
+  "rpo_local_measured": "0s (Point-in-time snapshot)"
+}

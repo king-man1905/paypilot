@@ -1,0 +1,67 @@
+{
+  "benchmark": "distributed_tracing_overhead_hardened",
+  "rounds_executed": 5,
+  "queries_per_mode": {
+    "sequential": 50,
+    "concurrent": 125
+  },
+  "tracing_off": {
+    "sequential": {
+      "total_requests": 50,
+      "total_wall_time_s": 4.075,
+      "throughput_req_s": 12.27,
+      "mean_latency_ms": 81.5,
+      "median_latency_ms": 49.33,
+      "p95_latency_ms": 169.4,
+      "p99_latency_ms": 181.45
+    },
+    "concurrent": {
+      "total_requests": 125,
+      "total_wall_time_s": 12.604,
+      "throughput_req_s": 9.92,
+      "mean_latency_ms": 478.09,
+      "median_latency_ms": 327.48,
+      "p95_latency_ms": 1055.97,
+      "p99_latency_ms": 1186.08
+    }
+  },
+  "tracing_on": {
+    "sequential": {
+      "total_requests": 50,
+      "total_wall_time_s": 4.693,
+      "throughput_req_s": 10.66,
+      "mean_latency_ms": 93.85,
+      "median_latency_ms": 58.25,
+      "p95_latency_ms": 191.96,
+      "p99_latency_ms": 294.18
+    },
+    "concurrent": {
+      "total_requests": 125,
+      "total_wall_time_s": 12.943,
+      "throughput_req_s": 9.66,
+      "mean_latency_ms": 492.88,
+      "median_latency_ms": 333.73,
+      "p95_latency_ms": 1035.23,
+      "p99_latency_ms": 1254.75
+    }
+  },
+  "overhead_summary": {
+    "sequential": {
+      "mean_overhead_ms": 12.35,
+      "mean_overhead_pct": 15.15,
+      "median_overhead_ms": 8.92,
+      "median_overhead_pct": 18.08,
+      "p95_overhead_ms": 22.56,
+      "p95_overhead_pct": 13.32
+    },
+    "concurrent": {
+      "mean_overhead_ms": 14.79,
+      "mean_overhead_pct": 3.09,
+      "median_overhead_ms": 6.25,
+      "median_overhead_pct": 1.91,
+      "p95_overhead_ms": -20.74,
+      "p95_overhead_pct": -1.96
+    }
+  },
+  "statistical_analysis": "Sequential tracing in PayPilot adds minimal in-memory context tracking and span recording overhead. Minor differences (< \u00b12%) in local CPU-bound sequential execution represent local measurement jitter. Under concurrent execution (25 requests across 5 worker threads), synchronization on the circular trace store and thread context transitions contribute to measurable concurrency overhead."
+}

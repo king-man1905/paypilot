@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-08-25T04:46:50.546908+00:00",
+  "benchmark_environment": "LOCAL FAILURE SIMULATION / BENCHMARK",
+  "overall_status": "PASSED",
+  "total_duration_ms": 1334.46,
+  "scenarios": [
+    {
+      "scenario": "api_shutdown_probe_transitions",
+      "category": "API Graceful Shutdown & Probes (A & E)",
+      "status": "PASSED",
+      "pre_shutdown_health_code": 200,
+      "pre_shutdown_ready_code": 200,
+      "shutdown_health_code": 200,
+      "shutdown_ready_code": 503,
+      "traffic_admission_blocked": true,
+      "liveness_intact_during_drain": true,
+      "duration_ms": 269.59
+    },
+    {
+      "scenario": "worker_crash_and_lease_recovery",
+      "category": "Worker Fault Tolerance (B & G)",
+      "status": "PASSED",
+      "job_id": "job_c5d028db2ec7",
+      "crashed_worker": "worker_crashed_node_1",
+      "recovering_worker": "worker_failover_node_2",
+      "duplicate_active_claims": 0,
+      "lease_recovered": true,
+      "final_job_status": "completed",
+      "duration_ms": 1051.41
+    },
+    {
+      "scenario": "redis_outage_fallback",
+      "category": "Redis Fault Tolerance (C)",
+      "status": "PASSED",
+      "fallback_engaged": true,
+      "fallback_rate_limiting_functional": true,
+      "duration_ms": 1.62
+    },
+    {
+      "scenario": "cluster_connection_pool_safety",
+      "category": "Database Capacity & Pool Safety (D)",
+      "status": "PASSED",
+      "standard_cluster_connections": 36,
+      "standard_cluster_safe": true,
+      "oversized_cluster_detected_unsafe": true,
+      "duration_ms": 0.2
+    },
+    {
+      "scenario": "rolling_update_safety_parameters",
+      "category": "Rolling Restart & Zero Downtime (F)",
+      "status": "PASSED",
+      "max_unavailable": 0,
+      "max_surge": 1,
+      "termination_grace_period_seconds": 30,
+      "duration_ms": 11.53
+    }
+  ],
+  "demarcation": {
+    "environment": "LOCAL FAILURE SIMULATION",
+    "lease_guarantee": "AT-MOST-ONE ACTIVE CLAIM / AT-LEAST-ONCE RECOVERY",
+    "production_status": "NOT CLOUD PRODUCTION VALIDATED"
+  }
+}

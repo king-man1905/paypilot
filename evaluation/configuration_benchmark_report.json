@@ -1,0 +1,43 @@
+{
+  "benchmark": "configuration_and_secrets_management",
+  "schema_version": 1,
+  "measurements": {
+    "config_loading": {
+      "iterations": 1000,
+      "mean_ms": 0.078,
+      "median_ms": 0.0714,
+      "p95_ms": 0.1157,
+      "p99_ms": 0.2192,
+      "min_ms": 0.0448,
+      "max_ms": 0.3818
+    },
+    "config_validation": {
+      "iterations": 1000,
+      "mean_ms": 0.0011,
+      "median_ms": 0.0011,
+      "p95_ms": 0.0011,
+      "p99_ms": 0.0015,
+      "min_ms": 0.001,
+      "max_ms": 0.0062
+    },
+    "secret_lookup": {
+      "iterations": 1000,
+      "mean_ms": 0.0019,
+      "median_ms": 0.0017,
+      "p95_ms": 0.0024,
+      "p99_ms": 0.0041,
+      "min_ms": 0.0013,
+      "max_ms": 0.0769
+    },
+    "snapshot_generation": {
+      "iterations": 1000,
+      "mean_ms": 0.0096,
+      "median_ms": 0.0091,
+      "p95_ms": 0.0123,
+      "p99_ms": 0.0161,
+      "min_ms": 0.0075,
+      "max_ms": 0.1229
+    }
+  },
+  "disclaimer": "Local microbenchmark measurements obtained in an offline test harness."
+}

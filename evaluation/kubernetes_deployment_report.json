@@ -1,0 +1,145 @@
+{
+  "timestamp": "2026-08-25T04:46:41.521346+00:00",
+  "benchmark_environment": "KUBERNETES MANIFEST VALIDATED / STATIC BENCHMARK",
+  "overall_status": "PASSED",
+  "duration_ms": 41.84,
+  "manifest_validation": {
+    "all_present": true,
+    "missing_files": [],
+    "syntax_errors": [],
+    "manifests": {
+      "namespace.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Namespace"
+        ]
+      },
+      "configmap.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "ConfigMap"
+        ]
+      },
+      "secrets.example.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Secret"
+        ]
+      },
+      "api-deployment.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Deployment"
+        ]
+      },
+      "api-service.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Service"
+        ]
+      },
+      "worker-deployment.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Deployment"
+        ]
+      },
+      "postgres-statefulset.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "StatefulSet"
+        ]
+      },
+      "postgres-service.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Service"
+        ]
+      },
+      "redis-deployment.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Deployment"
+        ]
+      },
+      "redis-service.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Service"
+        ]
+      },
+      "api-pdb.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "PodDisruptionBudget"
+        ]
+      },
+      "worker-pdb.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "PodDisruptionBudget"
+        ]
+      },
+      "api-hpa.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "HorizontalPodAutoscaler"
+        ]
+      },
+      "migration-job.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Job"
+        ]
+      },
+      "kustomization.yaml": {
+        "exists": true,
+        "document_count": 1,
+        "kinds": [
+          "Kustomization"
+        ]
+      }
+    }
+  },
+  "security_validation": {
+    "passed": true,
+    "checks": {
+      "api_non_root": true,
+      "api_resources_defined": true,
+      "api_probes_configured": true,
+      "worker_non_root": true,
+      "worker_resources_defined": true,
+      "secret_placeholders_only": true,
+      "namespace_isolation": true
+    },
+    "issues": []
+  },
+  "runtime_detection": {
+    "kubectl_available": false,
+    "kind_available": false,
+    "minikube_available": false,
+    "docker_available": false,
+    "orchestrator_available": false,
+    "active_tool": null,
+    "runtime_status": "LOCAL KUBERNETES RUNTIME NOT EXECUTED"
+  },
+  "demarcation": {
+    "manifest_status": "KUBERNETES MANIFEST VALIDATED",
+    "runtime_status": "LOCAL KUBERNETES RUNTIME NOT EXECUTED",
+    "production_status": "NOT CLOUD PRODUCTION VALIDATED"
+  }
+}

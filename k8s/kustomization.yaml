@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: paypilot
+
+commonLabels:
+  app.kubernetes.io/name: paypilot
+  app.kubernetes.io/part-of: paypilot
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - worker-deployment.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - redis-deployment.yaml
+  - redis-service.yaml
+  - api-pdb.yaml
+  - worker-pdb.yaml
+  - api-hpa.yaml
+  - migration-job.yaml
+
+images:
+  - name: paypilot
+    newName: paypilot
+    newTag: v1.24.0

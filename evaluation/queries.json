@@ -1,0 +1,123 @@
+{
+  "benchmark_name": "PayPilot Agentic Revenue Recovery Evaluation Benchmark",
+  "version": "1.0.0",
+  "queries": [
+    {
+      "id": "REV-01",
+      "category": "revenue",
+      "query": "Why did my revenue decrease and where is my biggest leakage?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "min_actions_expected": 3
+    },
+    {
+      "id": "REV-02",
+      "category": "revenue",
+      "query": "What is my total realized revenue and estimated recoverable opportunity?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "PAY-01",
+      "category": "payment",
+      "query": "Which payment method has the highest failure rate?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "PAY-02",
+      "category": "payment",
+      "query": "Why are UPI transactions failing and what are the top bank timeout errors?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "PAY-03",
+      "category": "payment",
+      "query": "How much gross transaction value was lost due to failed payment attempts?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "CHK-01",
+      "category": "checkout",
+      "query": "Why are mobile users converting less than desktop shoppers?",
+      "expected_intent": "checkout",
+      "expected_agents": ["checkout_agent"],
+      "required_evidence": ["checkout"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "CHK-02",
+      "category": "checkout",
+      "query": "Where is the checkout drop-off happening between Android and Desktop devices?",
+      "expected_intent": "checkout",
+      "expected_agents": ["checkout_agent"],
+      "required_evidence": ["checkout"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "CUST-01",
+      "category": "customer",
+      "query": "Which product category has the highest refund rate and why?",
+      "expected_intent": "customer",
+      "expected_agents": ["customer_agent"],
+      "required_evidence": ["customer"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "CUST-02",
+      "category": "customer",
+      "query": "How do returning and VIP customer cohorts behave in checkout conversion and refunds?",
+      "expected_intent": "customer",
+      "expected_agents": ["customer_agent"],
+      "required_evidence": ["customer"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "SIM-01",
+      "category": "what_if",
+      "query": "What if payment success rate improves by 3%?",
+      "expected_intent": "what_if",
+      "expected_agents": ["revenue_agent", "payment_agent"],
+      "required_evidence": ["revenue"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "SIM-02",
+      "category": "what_if",
+      "query": "Simulate the additional revenue unlocked if we improve payment success rate by 5%.",
+      "expected_intent": "what_if",
+      "expected_agents": ["revenue_agent", "payment_agent"],
+      "required_evidence": ["revenue"],
+      "min_actions_expected": 1
+    },
+    {
+      "id": "HOL-01",
+      "category": "holistic",
+      "query": "Perform a complete audit of my revenue leakage and give me a prioritized action plan.",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "min_actions_expected": 3
+    },
+    {
+      "id": "HOL-02",
+      "category": "holistic",
+      "query": "What are my top 3 revenue recovery priorities and how much money can we recover?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "min_actions_expected": 3
+    }
+  ]
+}

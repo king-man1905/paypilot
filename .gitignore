@@ -1,0 +1,46 @@
+# Environment & Keys
+.env
+*.env
+.env.*
+!.env.example
+
+# Python & Testing Caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Data & Model Indexes
+data/raw/*.tmp
+*.sqlite3
+*.db
+faiss_index/
+
+# IDE & OS Metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.env_*/
+
+# Scratch & Temporary Build Artifacts
+scratch/
+*.tmp
+dist/
+build/
+*.egg-info/
+node_modules/
+*/node_modules/
+*.pem
+*.key
+*.p12
+*.crt

@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-08-25T04:46:35.065564+00:00",
+  "benchmark_environment": "LOCAL BENCHMARK / SIMULATION",
+  "overall_status": "PASSED",
+  "targets": {
+    "target_corrupted_schemas": 0,
+    "target_broken_rollbacks": 0,
+    "target_unhandled_failures": 0
+  },
+  "measured_results": {
+    "total_corrupted_schemas": 0,
+    "total_broken_rollbacks": 0,
+    "total_unhandled_failures": 0
+  },
+  "scenarios": [
+    {
+      "scenario": "forward_versioned_migrations",
+      "migrations_applied": 3,
+      "duration_ms": 243.354,
+      "all_applied_in_ledger": true,
+      "checksums_valid": true,
+      "corrupted_schemas": 0
+    },
+    {
+      "scenario": "versioned_migration_rollback",
+      "migrations_rolled_back": 1,
+      "rolled_back_version": "003_backup_metadata",
+      "duration_ms": 30.437,
+      "ledger_updated_to_pending": true,
+      "broken_rollbacks": 0
+    },
+    {
+      "scenario": "healthy_candidate_promotion",
+      "action": "PROMOTED",
+      "active_version": "v1.23.0",
+      "duration_ms": 4739.598,
+      "stages_passed": 7,
+      "total_stages": 7,
+      "unhandled_failures": 0
+    },
+    {
+      "scenario": "faulty_candidate_automatic_rollback",
+      "action": "ROLLED_BACK",
+      "active_version": "v1.23.0",
+      "failed_candidate": "v1.23.1-faulty",
+      "duration_ms": 4434.698,
+      "rollback_success": true,
+      "unhandled_failures": 0
+    }
+  ]
+}

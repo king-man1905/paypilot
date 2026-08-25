@@ -1,0 +1,45 @@
+# ==============================================================================
+# PayPilot .dockerignore
+# Excludes local secrets, virtual environments, caches, and test artifacts
+# ==============================================================================
+
+# Secrets and environment configurations
+.env
+*.env
+.env.*
+!.env.example
+
+# Git and IDE metadata
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Python & testing caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env_*/
+
+# Documentation and temporary test files
+docs/
+tests/
+scratch/
+*.tmp
+*.db
+*.sqlite
+data/backups/*
+!data/backups/.gitkeep

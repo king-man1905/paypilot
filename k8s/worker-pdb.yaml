@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: paypilot-worker-pdb
+  namespace: paypilot
+  labels:
+    app.kubernetes.io/name: paypilot-worker
+    app.kubernetes.io/part-of: paypilot
+    app.kubernetes.io/component: worker
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: paypilot-worker

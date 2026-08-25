@@ -1,0 +1,147 @@
+# ==============================================================================
+# PayPilot Docker Compose Environment (Phase 22)
+# [LOCAL PRODUCTION-LIKE SIMULATION — NOT A CLOUD HA INFRASTRUCTURE GUARANTEE]
+# Multi-container topology: PayPilot FastAPI API + PostgreSQL 16 + Redis 7
+# ==============================================================================
+
+version: '3.8'
+
+networks:
+  paypilot-network:
+    driver: bridge
+
+volumes:
+  paypilot_postgres_data:
+    driver: local
+  paypilot_redis_data:
+    driver: local
+  paypilot_backups:
+    driver: local
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL Database (Relational Transaction, Job & Audit Storage)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: paypilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-paypilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paypilot_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-paypilot}
+    volumes:
+      - paypilot_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - paypilot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-paypilot} -d ${POSTGRES_DB:-paypilot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ----------------------------------------------------------------------------
+  # Redis Store (Distributed Rate Limiter, Quotas & Idempotency Storage)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: paypilot-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - paypilot_redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - paypilot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ----------------------------------------------------------------------------
+  # PayPilot API Application Service
+  # ----------------------------------------------------------------------------
+  paypilot-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paypilot-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${FASTAPI_PORT:-8000}:8000"
+    environment:
+      # Profile & Server
+      - PAYPILOT_ENV=${PAYPILOT_ENV:-production}
+      - FASTAPI_HOST=0.0.0.0
+      - FASTAPI_PORT=8000
+      - APP_WORKERS=${APP_WORKERS:-1}
+      - SHUTDOWN_TIMEOUT_SECONDS=${SHUTDOWN_TIMEOUT_SECONDS:-15.0}
+
+      # Authentication & Security
+      - REQUIRE_AUTH=${REQUIRE_AUTH:-true}
+      - PAYPILOT_API_KEY=${PAYPILOT_API_KEY:-paypilot-prod-analyst-key}
+      - PAYPILOT_ADMIN_KEY=${PAYPILOT_ADMIN_KEY:-paypilot-prod-admin-key}
+
+      # LLM / Inference Provider
+      - LLM_PROVIDER=${LLM_PROVIDER:-nvidia}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
+      - NVIDIA_MODEL=${NVIDIA_MODEL:-meta/llama-3.3-70b-instruct}
+      - NVIDIA_BASE_URL=${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      - LLM_REQUEST_TIMEOUT=${LLM_REQUEST_TIMEOUT:-25.0}
+
+      # Persistence & Storage Topology
+      - DATA_BACKEND=${DATA_BACKEND:-postgres}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-paypilot}:${POSTGRES_PASSWORD:-paypilot_dev_password}@postgres:5432/${POSTGRES_DB:-paypilot}
+      - DB_POOL_SIZE=${DB_POOL_SIZE:-5}
+      - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-10}
+      - JOB_STORE_BACKEND=${JOB_STORE_BACKEND:-sql}
+      - AUDIT_STORE_BACKEND=${AUDIT_STORE_BACKEND:-sql}
+      - RATE_LIMIT_BACKEND=${RATE_LIMIT_BACKEND:-redis}
+      - PERSISTENCE_BACKEND=${PERSISTENCE_BACKEND:-redis}
+      - IDEMPOTENCY_STORE_BACKEND=${IDEMPOTENCY_STORE_BACKEND:-redis}
+      - REDIS_URL=redis://redis:6379/0
+
+      # Traffic, Quotas & Tracing
+      - TRACING_ENABLED=${TRACING_ENABLED:-true}
+      - AUDIT_LOG_ENABLED=${AUDIT_LOG_ENABLED:-true}
+      - ANALYZE_RATE_LIMIT_PER_MINUTE=${ANALYZE_RATE_LIMIT_PER_MINUTE:-60}
+      - JOB_RATE_LIMIT_PER_MINUTE=${JOB_RATE_LIMIT_PER_MINUTE:-30}
+      - TENANT_MAX_CONCURRENT_JOBS=${TENANT_MAX_CONCURRENT_JOBS:-5}
+      - TENANT_DAILY_ANALYZE_QUOTA=${TENANT_DAILY_ANALYZE_QUOTA:-1000}
+      - TENANT_DAILY_JOB_QUOTA=${TENANT_DAILY_JOB_QUOTA:-500}
+    volumes:
+      - paypilot_backups:/app/data/backups
+    networks:
+      - paypilot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"

@@ -1,0 +1,454 @@
+{
+  "benchmark_name": "PayPilot Comprehensive Multi-Agent Evaluation Benchmark",
+  "version": "2.0.0",
+  "description": "32 ground-truth benchmark queries spanning revenue diagnostics, payment methods, checkout funnels, customer cohorts, scenario simulations, and holistic audits.",
+  "queries": [
+    {
+      "id": "REV-01",
+      "category": "revenue",
+      "query": "Why did my revenue decrease and where is my biggest leakage?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "total_realized_revenue_inr": 50092576.66,
+        "recoverable_opportunity_inr": 3488251.64,
+        "payment_success_rate_pct": 81.71
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "checkout_optimization"
+    },
+    {
+      "id": "REV-02",
+      "category": "revenue",
+      "query": "What is my total realized revenue and estimated recoverable opportunity?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue"],
+      "expected_metrics": {
+        "total_realized_revenue_inr": 50092576.66,
+        "recoverable_opportunity_inr": 3488251.64
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "revenue_recovery"
+    },
+    {
+      "id": "REV-03",
+      "category": "revenue",
+      "query": "Where am I losing the most money across all payment and checkout operations?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout"],
+      "expected_metrics": {
+        "gross_failed_value_inr": 12654909.17,
+        "recoverable_opportunity_inr": 3488251.64
+      },
+      "min_actions_expected": 2,
+      "expected_action_category": "leakage_recovery"
+    },
+    {
+      "id": "REV-04",
+      "category": "revenue",
+      "query": "Perform a complete audit of my revenue leakage and business health metrics.",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "total_realized_revenue_inr": 50092576.66,
+        "payment_success_rate_pct": 81.71,
+        "gross_failed_value_inr": 12654909.17
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "executive_audit"
+    },
+    {
+      "id": "REV-05",
+      "category": "revenue",
+      "query": "What are my top 3 revenue recovery priorities and how much money can we recover?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout"],
+      "expected_metrics": {
+        "recoverable_opportunity_inr": 3488251.64
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "action_prioritization"
+    },
+    {
+      "id": "PAY-01",
+      "category": "payment",
+      "query": "Which payment method has the highest failure rate?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "expected_metrics": {
+        "netbanking_failure_rate_pct": 21.57,
+        "upi_failure_rate_pct": 18.83
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "payment_reliability"
+    },
+    {
+      "id": "PAY-02",
+      "category": "payment",
+      "query": "Why are UPI transactions failing and what are the top bank timeout errors?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "expected_metrics": {
+        "top_failure_reason": "USER_ABORTED",
+        "second_failure_reason": "BANK_SERVER_TIMEOUT"
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "payment_reliability"
+    },
+    {
+      "id": "PAY-03",
+      "category": "payment",
+      "query": "How much gross transaction value was lost due to failed payment attempts?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "expected_metrics": {
+        "gross_failed_value_inr": 12654909.17
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "payment_reliability"
+    },
+    {
+      "id": "PAY-04",
+      "category": "payment",
+      "query": "What is the overall payment success rate across all gateways?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "expected_metrics": {
+        "payment_success_rate_pct": 81.71,
+        "payment_failure_rate_pct": 18.29
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "payment_reliability"
+    },
+    {
+      "id": "PAY-05",
+      "category": "payment",
+      "query": "What are the top failure reasons for credit card and debit card transactions?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "expected_metrics": {
+        "credit_card_failure_rate_pct": 17.3
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "payment_reliability"
+    },
+    {
+      "id": "PAY-06",
+      "category": "payment",
+      "query": "How many transactions failed due to gateway downtime or bank server timeout?",
+      "expected_intent": "payment",
+      "expected_agents": ["payment_agent"],
+      "required_evidence": ["payment"],
+      "expected_metrics": {
+        "bank_server_timeout_count": 687,
+        "bank_server_timeout_loss_inr": 3104914.53
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "payment_reliability"
+    },
+    {
+      "id": "CHK-01",
+      "category": "checkout",
+      "query": "Why are mobile users converting less than desktop shoppers?",
+      "expected_intent": "checkout",
+      "expected_agents": ["checkout_agent"],
+      "required_evidence": ["checkout"],
+      "expected_metrics": {
+        "mobile_android_conversion_pct": 80.66,
+        "desktop_conversion_pct": 85.11,
+        "mobile_desktop_conversion_gap_pct": 4.33
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "checkout_optimization"
+    },
+    {
+      "id": "CHK-02",
+      "category": "checkout",
+      "query": "Where is the checkout drop-off happening between Android and Desktop devices?",
+      "expected_intent": "checkout",
+      "expected_agents": ["checkout_agent"],
+      "required_evidence": ["checkout"],
+      "expected_metrics": {
+        "lowest_converting_device": "Mobile_Android"
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "checkout_optimization"
+    },
+    {
+      "id": "CHK-03",
+      "category": "checkout",
+      "query": "What is the checkout funnel conversion rate on iOS devices?",
+      "expected_intent": "checkout",
+      "expected_agents": ["checkout_agent"],
+      "required_evidence": ["checkout"],
+      "expected_metrics": {
+        "mobile_ios_conversion_pct": 81.08
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "checkout_optimization"
+    },
+    {
+      "id": "CHK-04",
+      "category": "checkout",
+      "query": "Compare mobile checkout conversion rate with tablet and desktop.",
+      "expected_intent": "checkout",
+      "expected_agents": ["checkout_agent"],
+      "required_evidence": ["checkout"],
+      "expected_metrics": {
+        "tablet_conversion_pct": 83.83,
+        "desktop_conversion_pct": 85.11
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "checkout_optimization"
+    },
+    {
+      "id": "CHK-05",
+      "category": "checkout",
+      "query": "How much revenue is lost specifically to mobile Android device drop-off?",
+      "expected_intent": "checkout",
+      "expected_agents": ["checkout_agent"],
+      "required_evidence": ["checkout"],
+      "expected_metrics": {
+        "mobile_android_lost_value_inr": 7332603.49
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "checkout_optimization"
+    },
+    {
+      "id": "CUST-01",
+      "category": "customer",
+      "query": "Which product category has the highest refund rate and why?",
+      "expected_intent": "customer",
+      "expected_agents": ["customer_agent"],
+      "required_evidence": ["customer"],
+      "expected_metrics": {
+        "highest_refund_category": "Fashion",
+        "fashion_refund_rate_pct": 17.99,
+        "overall_refund_rate_pct": 8.24
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "refund_mitigation"
+    },
+    {
+      "id": "CUST-02",
+      "category": "customer",
+      "query": "How do returning and VIP customer cohorts behave in checkout conversion and refunds?",
+      "expected_intent": "customer",
+      "expected_agents": ["customer_agent"],
+      "required_evidence": ["customer"],
+      "expected_metrics": {
+        "overall_refund_rate_pct": 8.24
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "customer_retention"
+    },
+    {
+      "id": "CUST-03",
+      "category": "customer",
+      "query": "What is the total refund amount in the Fashion category?",
+      "expected_intent": "customer",
+      "expected_agents": ["customer_agent"],
+      "required_evidence": ["customer"],
+      "expected_metrics": {
+        "fashion_refunded_amount_inr": 1648780.21,
+        "fashion_refunded_orders_count": 628
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "refund_mitigation"
+    },
+    {
+      "id": "CUST-04",
+      "category": "customer",
+      "query": "Compare refund rates across Electronics, Beauty, and Grocery categories.",
+      "expected_intent": "customer",
+      "expected_agents": ["customer_agent"],
+      "required_evidence": ["customer"],
+      "expected_metrics": {
+        "beauty_refund_rate_pct": 3.53,
+        "electronics_refund_rate_pct": 4.66,
+        "grocery_refund_rate_pct": 4.96
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "category_analysis"
+    },
+    {
+      "id": "CUST-05",
+      "category": "customer",
+      "query": "What is the net revenue of the Electronics category after deducting refunds?",
+      "expected_intent": "customer",
+      "expected_agents": ["customer_agent"],
+      "required_evidence": ["customer"],
+      "expected_metrics": {
+        "electronics_net_revenue_inr": 25302147.45
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "category_analysis"
+    },
+    {
+      "id": "SIM-01",
+      "category": "what_if",
+      "query": "What if payment success rate improves by 1%?",
+      "expected_intent": "what_if",
+      "expected_agents": ["revenue_agent", "payment_agent"],
+      "required_evidence": ["revenue"],
+      "expected_metrics": {
+        "target_uplift_pct": 1.0,
+        "additional_successful_transactions": 150,
+        "estimated_additional_revenue_inr": 613078.5
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "scenario_simulation"
+    },
+    {
+      "id": "SIM-02",
+      "category": "what_if",
+      "query": "What if payment success rate improves by 3%?",
+      "expected_intent": "what_if",
+      "expected_agents": ["revenue_agent", "payment_agent"],
+      "required_evidence": ["revenue"],
+      "expected_metrics": {
+        "target_uplift_pct": 3.0,
+        "additional_successful_transactions": 450,
+        "estimated_additional_revenue_inr": 1839235.5
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "scenario_simulation"
+    },
+    {
+      "id": "SIM-03",
+      "category": "what_if",
+      "query": "Simulate the additional revenue unlocked if we improve payment success rate by 5%.",
+      "expected_intent": "what_if",
+      "expected_agents": ["revenue_agent", "payment_agent"],
+      "required_evidence": ["revenue"],
+      "expected_metrics": {
+        "target_uplift_pct": 5.0,
+        "additional_successful_transactions": 750,
+        "estimated_additional_revenue_inr": 3065392.5
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "scenario_simulation"
+    },
+    {
+      "id": "SIM-04",
+      "category": "what_if",
+      "query": "If we improve payment success by 2%, how many additional transactions will succeed?",
+      "expected_intent": "what_if",
+      "expected_agents": ["revenue_agent", "payment_agent"],
+      "required_evidence": ["revenue"],
+      "expected_metrics": {
+        "target_uplift_pct": 2.0,
+        "additional_successful_transactions": 300,
+        "estimated_additional_revenue_inr": 1226157.0
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "scenario_simulation"
+    },
+    {
+      "id": "SIM-05",
+      "category": "what_if",
+      "query": "Simulate the revenue impact of an increase by 4% in checkout success rate.",
+      "expected_intent": "what_if",
+      "expected_agents": ["revenue_agent", "payment_agent"],
+      "required_evidence": ["revenue"],
+      "expected_metrics": {
+        "target_uplift_pct": 4.0,
+        "additional_successful_transactions": 600,
+        "estimated_additional_revenue_inr": 2452314.0
+      },
+      "min_actions_expected": 1,
+      "expected_action_category": "scenario_simulation"
+    },
+    {
+      "id": "HOL-01",
+      "category": "holistic",
+      "query": "Why did my business experience a revenue drop and what should the merchant prioritize?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "total_realized_revenue_inr": 50092576.66,
+        "recoverable_opportunity_inr": 3488251.64
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "executive_strategy"
+    },
+    {
+      "id": "HOL-02",
+      "category": "holistic",
+      "query": "What is happening to my payment operations and what is the biggest leakage across the funnel?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "gross_failed_value_inr": 12654909.17
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "executive_strategy"
+    },
+    {
+      "id": "HOL-03",
+      "category": "holistic",
+      "query": "Analyze my overall business health, payment success rate, and recoverable opportunity.",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "total_realized_revenue_inr": 50092576.66,
+        "recoverable_opportunity_inr": 3488251.64
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "executive_strategy"
+    },
+    {
+      "id": "HOL-04",
+      "category": "holistic",
+      "query": "Provide a complete diagnostic breakdown and prioritize revenue recovery actions.",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "recoverable_opportunity_inr": 3488251.64
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "action_prioritization"
+    },
+    {
+      "id": "HOL-05",
+      "category": "holistic",
+      "query": "What should management do first to stop payment drops and recover lost revenue?",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "recoverable_opportunity_inr": 3488251.64
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "action_prioritization"
+    },
+    {
+      "id": "HOL-06",
+      "category": "holistic",
+      "query": "Perform a multi-agent revenue recovery investigation across payment, checkout, and refund metrics.",
+      "expected_intent": "revenue",
+      "expected_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+      "required_evidence": ["revenue", "payment", "checkout", "customer"],
+      "expected_metrics": {
+        "total_realized_revenue_inr": 50092576.66,
+        "payment_success_rate_pct": 81.71
+      },
+      "min_actions_expected": 3,
+      "expected_action_category": "executive_strategy"
+    }
+  ]
+}

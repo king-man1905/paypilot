@@ -1,0 +1,151 @@
+name: PayPilot CI/CD & Safe Release Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ============================================================================
+  # Job 1: Static Security, Secret Audit & Linting
+  # ============================================================================
+  security-and-secret-audit:
+    name: Secret Scanning & Static Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Secret Leakage & Static Security Scan
+        run: |
+          python -c "from evaluation.release_pipeline import stage_1_secret_audit; res = stage_1_secret_audit(); assert res['status'] == 'PASSED', f'Secret audit failed: {res}'"
+
+  # ============================================================================
+  # Job 2: Unit & Integration Test Suite
+  # ============================================================================
+  unit-and-integration-tests:
+    name: Pytest Test Suite
+    runs-on: ubuntu-latest
+    needs: [security-and-secret-audit]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pytest Suite
+        run: |
+          python -m pytest -v --durations=10
+
+  # ============================================================================
+  # Job 3: Offline Multi-Agent Benchmark Evaluation
+  # ============================================================================
+  offline-multi-agent-eval:
+    name: 32-Case Offline Multi-Agent Evaluation
+    runs-on: ubuntu-latest
+    needs: [unit-and-integration-tests]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Offline Benchmark Evaluation
+        run: |
+          python evaluation/run_evaluation.py
+
+  # ============================================================================
+  # Job 4: Container Build & Healthcheck Static Validation
+  # ============================================================================
+  docker-validation:
+    name: Docker Multi-Stage Build & Configuration
+    runs-on: ubuntu-latest
+    needs: [unit-and-integration-tests]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfile and Compose Configuration
+        run: |
+          python -c "from evaluation.release_pipeline import stage_4_docker_gate; res = stage_4_docker_gate(); assert res['status'] == 'PASSED', f'Docker gate failed: {res}'"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Candidate Production Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: paypilot:candidate
+
+  # ============================================================================
+  # Job 5: Versioned Migrations, Canary Simulation & Release Gate
+  # ============================================================================
+  migration-and-release-gate:
+    name: Migration Gate & Safe Release Simulation
+    runs-on: ubuntu-latest
+    needs: [offline-multi-agent-eval, docker-validation]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Safe Release Pipeline Simulation
+        run: |
+          python evaluation/release_pipeline.py
+
+      - name: Execute Release & Rollback Benchmarks
+        run: |
+          python evaluation/release_benchmark.py
+
+      - name: Upload Release Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-pipeline-reports
+          path: |
+            evaluation/release_pipeline_report.json
+            evaluation/release_benchmark_report.json
+            evaluation/evaluation_report.json

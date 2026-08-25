@@ -1,0 +1,72 @@
+{
+  "dataset_row_count": 15000,
+  "numerical_consistency_100_pct": true,
+  "cold_load_time_ms": {
+    "csv": 65.95,
+    "sqlite": 94.75
+  },
+  "warm_batch_analytics_latency_ms": {
+    "csv": 40.109,
+    "sqlite": 57.475
+  },
+  "filtered_query_latency_ms": {
+    "csv": 3.31,
+    "sqlite": 8.01
+  },
+  "metrics_consistency": [
+    {
+      "metric": "Total Revenue (INR)",
+      "csv_value": 50092576.66,
+      "sql_value": 50092576.66,
+      "consistent": true
+    },
+    {
+      "metric": "Transaction Count",
+      "csv_value": 15000,
+      "sql_value": 15000,
+      "consistent": true
+    },
+    {
+      "metric": "Successful Txn Count",
+      "csv_value": 12256,
+      "sql_value": 12256,
+      "consistent": true
+    },
+    {
+      "metric": "Failed Txn Count",
+      "csv_value": 2744,
+      "sql_value": 2744,
+      "consistent": true
+    },
+    {
+      "metric": "Payment Success Rate (%)",
+      "csv_value": 81.71,
+      "sql_value": 81.71,
+      "consistent": true
+    },
+    {
+      "metric": "Payment Failure Rate (%)",
+      "csv_value": 18.29,
+      "sql_value": 18.29,
+      "consistent": true
+    },
+    {
+      "metric": "Average Order Value (INR)",
+      "csv_value": 4087.19,
+      "sql_value": 4087.19,
+      "consistent": true
+    },
+    {
+      "metric": "Refund Rate (%)",
+      "csv_value": 8.24,
+      "sql_value": 8.24,
+      "consistent": true
+    },
+    {
+      "metric": "Failed Payment Value (INR)",
+      "csv_value": 12654909.17,
+      "sql_value": 12654909.17,
+      "consistent": true
+    }
+  ]
+}

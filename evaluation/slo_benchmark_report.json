@@ -1,0 +1,190 @@
+{
+  "benchmark": "service_level_objectives",
+  "workload": {
+    "sync_requests": 32,
+    "async_jobs": 10
+  },
+  "measured_metrics": {
+    "timestamp": "2026-08-25T04:27:40.788688+00:00",
+    "requests": {
+      "total_requests": 32,
+      "successful_requests": 32,
+      "error_requests": 0,
+      "success_rate_pct": 100.0,
+      "error_rate_pct": 0.0,
+      "mean_latency_ms": 103.24,
+      "p50_latency_ms": 106.45,
+      "p95_latency_ms": 189.74,
+      "p99_latency_ms": 218.99
+    },
+    "llm": {
+      "total_calls": 126,
+      "retries": 0,
+      "fallbacks": 42,
+      "fallback_rate_pct": 33.33
+    },
+    "jobs": {
+      "total_submitted": 10,
+      "completed": 10,
+      "failed": 0,
+      "success_rate_pct": 100.0
+    },
+    "agents": {
+      "revenue_agent": {
+        "count": 22,
+        "avg_duration_ms": 131.32
+      },
+      "payment_agent": {
+        "count": 32,
+        "avg_duration_ms": 52.39
+      },
+      "checkout_agent": {
+        "count": 22,
+        "avg_duration_ms": 40.57
+      },
+      "customer_agent": {
+        "count": 22,
+        "avg_duration_ms": 39.35
+      },
+      "recovery_agent": {
+        "count": 42,
+        "avg_duration_ms": 11.7
+      }
+    }
+  },
+  "slo_evaluation": {
+    "overall_status": "BREACHED",
+    "total_slos_evaluated": 4,
+    "active_breaches_count": 1,
+    "new_alerts_emitted_count": 1,
+    "evaluated_slos": [
+      {
+        "slo_name": "analyze_p95_latency",
+        "observed_value": 189.74,
+        "target_value": 1500.0,
+        "unit": "ms",
+        "status": "HEALTHY",
+        "severity": "WARNING",
+        "timestamp": "2026-08-25T04:27:40.788730+00:00",
+        "details": {
+          "total_requests": 32
+        }
+      },
+      {
+        "slo_name": "api_error_rate",
+        "observed_value": 0.0,
+        "target_value": 1.0,
+        "unit": "percent",
+        "status": "HEALTHY",
+        "severity": "WARNING",
+        "timestamp": "2026-08-25T04:27:40.788742+00:00",
+        "details": {
+          "total_requests": 32,
+          "error_count": 0
+        }
+      },
+      {
+        "slo_name": "job_success_rate",
+        "observed_value": 100.0,
+        "target_value": 99.0,
+        "unit": "percent",
+        "status": "HEALTHY",
+        "severity": "WARNING",
+        "timestamp": "2026-08-25T04:27:40.788750+00:00",
+        "details": {
+          "total_submitted": 10,
+          "failed_jobs": 0
+        }
+      },
+      {
+        "slo_name": "llm_fallback_rate",
+        "observed_value": 33.33,
+        "target_value": 5.0,
+        "unit": "percent",
+        "status": "BREACHED",
+        "severity": "WARNING",
+        "timestamp": "2026-08-25T04:27:40.788756+00:00",
+        "details": {
+          "total_calls": 126
+        }
+      }
+    ],
+    "active_breaches": [
+      {
+        "slo_name": "llm_fallback_rate",
+        "observed_value": 33.33,
+        "target_value": 5.0,
+        "unit": "percent",
+        "status": "BREACHED",
+        "severity": "WARNING",
+        "timestamp": "2026-08-25T04:27:40.788756+00:00",
+        "details": {
+          "total_calls": 126
+        }
+      }
+    ],
+    "new_alerts_emitted": [
+      {
+        "slo_name": "llm_fallback_rate",
+        "observed_value": 33.33,
+        "target_value": 5.0,
+        "unit": "percent",
+        "status": "BREACHED",
+        "severity": "WARNING",
+        "timestamp": "2026-08-25T04:27:40.788756+00:00",
+        "details": {
+          "total_calls": 126
+        }
+      }
+    ],
+    "metrics_evaluated": {
+      "timestamp": "2026-08-25T04:27:40.788688+00:00",
+      "requests": {
+        "total_requests": 32,
+        "successful_requests": 32,
+        "error_requests": 0,
+        "success_rate_pct": 100.0,
+        "error_rate_pct": 0.0,
+        "mean_latency_ms": 103.24,
+        "p50_latency_ms": 106.45,
+        "p95_latency_ms": 189.74,
+        "p99_latency_ms": 218.99
+      },
+      "llm": {
+        "total_calls": 126,
+        "retries": 0,
+        "fallbacks": 42,
+        "fallback_rate_pct": 33.33
+      },
+      "jobs": {
+        "total_submitted": 10,
+        "completed": 10,
+        "failed": 0,
+        "success_rate_pct": 100.0
+      },
+      "agents": {
+        "revenue_agent": {
+          "count": 22,
+          "avg_duration_ms": 131.32
+        },
+        "payment_agent": {
+          "count": 32,
+          "avg_duration_ms": 52.39
+        },
+        "checkout_agent": {
+          "count": 22,
+          "avg_duration_ms": 40.57
+        },
+        "customer_agent": {
+          "count": 22,
+          "avg_duration_ms": 39.35
+        },
+        "recovery_agent": {
+          "count": 42,
+          "avg_duration_ms": 11.7
+        }
+      }
+    }
+  },
+  "disclaimer": "Local measurements obtained in an offline test harness. Does not constitute a cloud SLA guarantee."
+}

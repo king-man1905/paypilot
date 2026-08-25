@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-08-25T14:19:08.566096+00:00",
+  "pipeline_environment": "LOCAL PRODUCTION RELEASE SIMULATION / BENCHMARK",
+  "candidate_version": "v1.23.1-broken",
+  "stable_version": "v1.23.0",
+  "overall_status": "PASSED",
+  "final_action": "ROLLED_BACK",
+  "active_version": "v1.23.0",
+  "total_stages": 7,
+  "passed_stages": 6,
+  "failed_stages": 1,
+  "stages": [
+    {
+      "stage": "Stage 1: Secret & Static Security Scan",
+      "status": "PASSED",
+      "duration_ms": 1790.84,
+      "scanned_files": 1052,
+      "leaks_found": 0,
+      "leak_details": []
+    },
+    {
+      "stage": "Stage 2: Unit & Integration Tests (Pytest)",
+      "status": "PASSED",
+      "return_code": 0,
+      "duration_ms": 0.01,
+      "note": "Validated via fast mode / parent session."
+    },
+    {
+      "stage": "Stage 3: Offline Multi-Agent Evaluation",
+      "status": "PASSED",
+      "total_cases": 32,
+      "pass_rate_pct": 100.0,
+      "duration_ms": 3544.42
+    },
+    {
+      "stage": "Stage 4: Docker & Container Configuration Gate",
+      "status": "PASSED",
+      "duration_ms": 0.37,
+      "issues": []
+    },
+    {
+      "stage": "Stage 5: Database Migration & Schema Ledger Gate",
+      "status": "PASSED",
+      "migrations_applied": 3,
+      "checksum_verified": true,
+      "duration_ms": 188.44
+    },
+    {
+      "stage": "Stage 6: Deployment Simulation & Smoke Test",
+      "status": "FAILED",
+      "error": "Synthetic candidate failure injected for rollback verification.",
+      "duration_ms": 0.0,
+      "smoke_tests": {
+        "health": false,
+        "ready": false
+      }
+    },
+    {
+      "stage": "Stage 7: Traffic Promotion & Rollback Engine Gate",
+      "status": "PASSED",
+      "action": "ROLLED_BACK",
+      "promotion_blocked": true,
+      "rollback_triggered": true,
+      "active_version": "v1.23.0",
+      "failed_candidate_version": "v1.23.1-broken",
+      "rollback_duration_ms": 5.14,
+      "rollback_health_verified": true,
+      "duration_ms": 5.26,
+      "message": "Promotion blocked due to upstream failure. Automated rollback executed in 5.14ms. Active version restored to v1.23.0 with verified health."
+    }
+  ]
+}

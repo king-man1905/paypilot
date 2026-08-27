@@ -27,7 +27,56 @@ Rules:
    - Root-Cause Breakdown: What is causing the issue (e.g. specific payment methods, error codes, device conversion gaps, or category refunds).
    - Prioritized Action Plan: 2-4 concrete, actionable steps the merchant can take immediately to recover revenue.
 3. Keep the tone professional, authoritative, and solutions-oriented.
+4. Output ONLY the executive synthesis. Do NOT output any thinking process, reasoning steps, preamble, conversational filler, or meta-commentary. Begin your response immediately with "Executive Summary:".
 """
+
+
+def _clean_llm_synthesis(text: str) -> str:
+    """Strips chain-of-thought, thinking processes, and meta-commentary from LLM aggregator output."""
+    if not text or not isinstance(text, str):
+        return ""
+    import re
+
+    # 1. Strip XML think tags
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+
+    # 2. Match standalone report header line (never match inside bullet lists or inline mentions)
+    header_pattern = re.compile(
+        r"(?m)^(?:#{1,4}\s*)?(?:EXECUTIVE SUMMARY|BUSINESS DIAGNOSIS|EXECUTIVE BRIEFING|EXECUTIVE DIAGNOSIS)(?:\s*:|\s*[-=]{2,}|\s*$)",
+        re.IGNORECASE,
+    )
+    match = header_pattern.search(cleaned)
+    if not match:
+        return ""
+
+    cleaned = cleaned[match.start():].strip()
+
+    # 3. Structural validation: must contain at least 2 real report sections/markers
+    structural_markers = [
+        r"Executive Summary",
+        r"Root-Cause Breakdown",
+        r"Prioritized Action Plan",
+        r"Recommendations",
+        r"Total Revenue",
+        r"Success Rate",
+        r"Failure Rate",
+        r"Loss Amount",
+    ]
+
+    found_count = 0
+    for marker in structural_markers:
+        if re.search(marker, cleaned, re.IGNORECASE):
+            found_count += 1
+
+    if found_count < 2 or len(cleaned) < 50:
+        return ""
+
+    # 4. Meta-commentary guardrails
+    lowered_start = cleaned[:250].lower()
+    if "thinking process" in lowered_start or "analyze user input" in lowered_start:
+        return ""
+
+    return cleaned
 
 
 def _generate_deterministic_synthesis(query: str, evidence: Dict[str, Any], executed: List[str]) -> Dict[str, Any]:
@@ -192,7 +241,8 @@ def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
 
                 res = execute_with_retry(_call_synthesis, max_retries=0, on_retry=lambda att, exc, d: record_retry())
                 lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
-                text_answer = getattr(res, "content", str(res)).strip()
+                raw_text = getattr(res, "content", str(res)).strip()
+                text_answer = _clean_llm_synthesis(raw_text)
                 if text_answer:
                     nvidia_circuit_breaker.record_success()
                     state["final_answer"] = text_answer

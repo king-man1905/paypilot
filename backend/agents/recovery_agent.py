@@ -55,7 +55,57 @@ Rules:
    - EXPECTED REVENUE UPSIDE: Estimated recoverable opportunity and what-if simulation upside.
    - EXECUTIVE RECOMMENDATION: 1-2 sentence decisive summary on what the merchant leadership should execute first.
 3. Always use clear terminology: "Estimated recoverable opportunity" (NOT guaranteed revenue).
+4. Output ONLY the executive decision briefing. Do NOT output any thinking process, reasoning steps, preamble, conversational filler, or meta-commentary. Begin your response immediately with "BUSINESS DIAGNOSIS".
 """
+
+
+def _clean_llm_synthesis(text: str) -> str:
+    """Strips chain-of-thought, thinking processes, and meta-commentary from LLM recovery output."""
+    if not text or not isinstance(text, str):
+        return ""
+    import re
+
+    # 1. Strip XML think tags
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+
+    # 2. Match standalone report header line (never match inside bullet lists or inline mentions)
+    header_pattern = re.compile(
+        r"(?m)^(?:#{1,4}\s*)?(?:BUSINESS DIAGNOSIS|EXECUTIVE SUMMARY|EXECUTIVE BRIEFING)(?:\s*:|\s*[-=]{2,}|\s*$)",
+        re.IGNORECASE,
+    )
+    match = header_pattern.search(cleaned)
+    if not match:
+        return ""
+
+    cleaned = cleaned[match.start():].strip()
+
+    # 3. Structural validation: must contain at least 2 real report sections/markers
+    structural_markers = [
+        r"TOP REVENUE LEAKS",
+        r"PRIORITIZED ACTION(?:S|\s+PLAN)",
+        r"EXPECTED REVENUE UPSIDE",
+        r"EXECUTIVE RECOMMENDATION",
+        r"Realized Revenue",
+        r"Overall Payment Success Rate",
+        r"Observed Failed Volume",
+        r"Gross Lost Transaction",
+        r"Root-Cause Breakdown",
+    ]
+
+    found_count = 0
+    for marker in structural_markers:
+        if re.search(marker, cleaned, re.IGNORECASE):
+            found_count += 1
+
+    if found_count < 2 or len(cleaned) < 60:
+        return ""
+
+    # 4. Meta-commentary guardrails
+    lowered_start = cleaned[:250].lower()
+    if "thinking process" in lowered_start or "analyze user input" in lowered_start:
+        return ""
+
+    return cleaned
 
 
 def calculate_priority_score(
@@ -549,7 +599,8 @@ def recovery_agent_node(state: PayPilotState) -> PayPilotState:
 
                     res = execute_with_retry(_call_recovery, max_retries=0, on_retry=lambda att, exc, d: record_retry())
                     lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
-                    content = getattr(res, "content", str(res)).strip()
+                    raw_content = getattr(res, "content", str(res)).strip()
+                    content = _clean_llm_synthesis(raw_content)
                     if content:
                         nvidia_circuit_breaker.record_success()
                         state["final_answer"] = content

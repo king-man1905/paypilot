@@ -166,7 +166,7 @@ def supervisor_node(state: PayPilotState) -> PayPilotState:
                         HumanMessage(content=prompt_content),
                     ])
 
-                raw_res = execute_with_retry(_call_llm, on_retry=lambda att, exc, d: record_retry())
+                raw_res = execute_with_retry(_call_llm, max_retries=0, on_retry=lambda att, exc, d: record_retry())
                 lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
                 content = getattr(raw_res, "content", str(raw_res))
                 decision = _parse_llm_json_response(content)

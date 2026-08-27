@@ -176,18 +176,15 @@ def test_circuit_breaker_half_open_failure_re_trips_to_open():
 
 
 def test_supervisor_retry_and_circuit_breaker_resilience():
-    """Verifies supervisor node uses retries on transient errors and falls back safely."""
+    """Verifies supervisor node falls back immediately to heuristic routing when LLM times out."""
     from backend.agents.supervisor import supervisor_node
     from backend.graph.state import PayPilotState
 
     state: PayPilotState = {"user_query": "Why did my revenue decrease?"}
 
-    # Simulate LLM failing twice with Timeout then succeeding
+    # Simulate LLM failing with TimeoutError
     mock_llm = MagicMock()
-    mock_llm.invoke.side_effect = [
-        TimeoutError("Read timed out"),
-        AIMessage(content='{"intent": "revenue", "required_agents": ["revenue_agent", "recovery_agent"]}'),
-    ]
+    mock_llm.invoke.side_effect = TimeoutError("Read timed out")
 
     with patch("backend.agents.supervisor.get_llm", return_value=mock_llm):
         res_state = supervisor_node(state)
@@ -195,8 +192,7 @@ def test_supervisor_retry_and_circuit_breaker_resilience():
         assert res_state["intent"] == "revenue"
         assert "revenue_agent" in res_state["required_agents"]
         snapshot = get_metrics_snapshot()
-        assert snapshot["llm"]["retries"] >= 1
-        assert snapshot["llm"]["successful_calls"] == 1
+        assert snapshot["llm"]["fallbacks"] >= 1
 
 
 def test_aggregator_partial_evidence_resilience():

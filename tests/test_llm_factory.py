@@ -100,7 +100,13 @@ def test_evidence_aggregator_with_mocked_llm():
     """Verify that evidence aggregator node uses NVIDIA LLM synthesis when available."""
     mock_llm = MagicMock()
     mock_response = MagicMock()
-    mock_response.content = "Executive Synthesis: Revenue decreased due to UPI timeouts on mobile devices."
+    expected_synthesis = (
+        "Executive Summary:\n"
+        "Total Revenue: INR 2,000,000.00. Payment Success Rate dropped to 74.2%.\n\n"
+        "Root-Cause Breakdown:\n"
+        "UPI timeouts on mobile devices caused INR 500,000.00 in failed transactions."
+    )
+    mock_response.content = expected_synthesis
     mock_llm.invoke.return_value = mock_response
 
     with patch("backend.agents.aggregator.get_llm", return_value=mock_llm):
@@ -121,5 +127,5 @@ def test_evidence_aggregator_with_mocked_llm():
         }
 
         out_state = evidence_aggregator_node(state)
-        assert out_state["final_answer"] == "Executive Synthesis: Revenue decreased due to UPI timeouts on mobile devices."
+        assert out_state["final_answer"] == expected_synthesis
         assert "revenue" in out_state["analysis"]["evidence_sections"]

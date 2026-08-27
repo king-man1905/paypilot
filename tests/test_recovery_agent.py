@@ -268,7 +268,13 @@ def test_recovery_agent_with_mocked_nvidia_llm(sample_evidence):
     """Verify that when NVIDIA LLM is available, it synthesizes the executive response."""
     mock_llm = MagicMock()
     mock_response = MagicMock()
-    mock_response.content = "EXECUTIVE BRIEFING: Recommended P1 is dynamic UPI routing to recover INR 740,000."
+    expected_report = (
+        "BUSINESS DIAGNOSIS\n------------------\n"
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
+        "TOP REVENUE LEAKS\n1. Netbanking failure\n\n"
+        "PRIORITIZED ACTION PLAN\n[P1] Recommended P1 is dynamic UPI routing to recover INR 740,000."
+    )
+    mock_response.content = expected_report
     mock_llm.invoke.return_value = mock_response
 
     with patch("backend.agents.recovery_agent.get_llm", return_value=mock_llm):
@@ -286,5 +292,108 @@ def test_recovery_agent_with_mocked_nvidia_llm(sample_evidence):
         }
 
         out_state = recovery_agent_node(state)
-        assert out_state["final_answer"] == "EXECUTIVE BRIEFING: Recommended P1 is dynamic UPI routing to recover INR 740,000."
+        assert out_state["final_answer"] == expected_report
         assert len(out_state["priority_actions"]) > 0
+
+
+def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
+    """Regression test cases A through H for executive synthesis sanitization."""
+    from backend.agents.recovery_agent import _clean_llm_synthesis, recovery_agent_node
+    from backend.agents.aggregator import _clean_llm_synthesis as clean_agg, evidence_aggregator_node
+
+    # Case A: Valid executive report -> accepted unchanged
+    valid_report = (
+        "BUSINESS DIAGNOSIS\n------------------\n"
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
+        "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
+        "PRIORITIZED ACTION PLAN\n[P1] Gateway Routing"
+    )
+    assert _clean_llm_synthesis(valid_report).startswith("BUSINESS DIAGNOSIS")
+
+    # Case B: <think>...</think> + valid report -> thinking removed
+    think_with_report = (
+        "<think>Analyzing numbers and revenue impact...</think>\n\n"
+        "BUSINESS DIAGNOSIS\n"
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
+        "TOP REVENUE LEAKS\n1. Netbanking"
+    )
+    res_b = _clean_llm_synthesis(think_with_report)
+    assert res_b.startswith("BUSINESS DIAGNOSIS")
+    assert "<think>" not in res_b
+
+    # Case C: "BUSINESS DIAGNOSIS" appearing inside quoted prompt instructions -> MUST NOT match
+    quoted_prompt_rule = (
+        "Here's a thinking process:\n"
+        "1.  **Analyze Request and Constraints:**\n"
+        "    - Role: Chief Financial Intelligence Officer.\n"
+        "    - Structure: BUSINESS DIAGNOSIS, TOP REVENUE LEAKS, PRIORITIZED ACTION PLAN.\n"
+        "    - Output ONLY the briefing.\n"
+        "2.  **Map Data to Required Sections:**\n"
+        "    - Realized Revenue is 50M."
+    )
+    assert _clean_llm_synthesis(quoted_prompt_rule) == ""
+
+    # Case D: Thinking process containing prompt rules but no actual report -> MUST return ""
+    leak_case_d = (
+        "BUSINESS DIAGNOSIS, TOP REVENUE LEAKS, PRIORITIZED ACTION PLAN, EXPECTED REVENUE UPSIDE, EXECUTIVE RECOMMENDATION.\n"
+        "     - Use clear terminology: 'Estimated recoverable opportunity' (NOT guaranteed revenue).\n"
+        "     - Output ONLY the briefing. No thinking process, reasoning, preamble, filler, or meta-commentary.\n"
+        "2.  **Map Data to Required Sections:**\n"
+        "   - I think I should present: Total realized revenue: 50,092,576.66 INR."
+    )
+    assert _clean_llm_synthesis(leak_case_d) == ""
+
+    # Case E: Incomplete report (< 2 markers) -> MUST return ""
+    incomplete_report = "BUSINESS DIAGNOSIS\n------------------\nShort incomplete draft without structure."
+    assert _clean_llm_synthesis(incomplete_report) == ""
+
+    # Case F: Valid report with Markdown heading -> accepted
+    md_heading_report = (
+        "## BUSINESS DIAGNOSIS\n"
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
+        "### TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%"
+    )
+    assert _clean_llm_synthesis(md_heading_report).startswith("## BUSINESS DIAGNOSIS")
+
+    # Case G: Aggregator fallback still works when LLM is invalid or returns thinking
+    mock_agg_llm = MagicMock()
+    mock_agg_llm.invoke.return_value = MagicMock(content="Here's a thinking process:\n1. Thinking only.")
+    with patch("backend.agents.aggregator.get_llm", return_value=mock_agg_llm):
+        agg_state: PayPilotState = {
+            "user_query": "Why did revenue drop?",
+            "intent": "revenue",
+            "required_agents": ["revenue_agent"],
+            "executed_agents": ["revenue_agent"],
+            "tool_results": {},
+            "evidence": sample_evidence,
+            "analysis": {},
+            "recommendations": [],
+            "final_answer": None,
+            "errors": [],
+        }
+        out_agg = evidence_aggregator_node(agg_state)
+        assert out_agg["final_answer"] is not None
+        assert "thinking process" not in out_agg["final_answer"].lower()
+        assert len(out_agg["recommendations"]) > 0
+
+    # Case H: Recovery fallback still works when LLM output is invalid or returns thinking
+    mock_rec_llm = MagicMock()
+    mock_rec_llm.invoke.return_value = MagicMock(content=leak_case_d)
+    with patch("backend.agents.recovery_agent.get_llm", return_value=mock_rec_llm):
+        rec_state: PayPilotState = {
+            "user_query": "Why did revenue drop?",
+            "intent": "revenue",
+            "required_agents": ["revenue_agent"],
+            "executed_agents": ["revenue_agent"],
+            "tool_results": {},
+            "evidence": sample_evidence,
+            "analysis": {},
+            "recommendations": [],
+            "final_answer": None,
+            "errors": [],
+        }
+        out_rec = recovery_agent_node(rec_state)
+        assert "BUSINESS DIAGNOSIS" in out_rec["final_answer"]
+        assert "thinking process" not in out_rec["final_answer"].lower()
+        assert len(out_rec["priority_actions"]) > 0
+

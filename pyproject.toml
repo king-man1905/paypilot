@@ -1,0 +1,3 @@
+[tool.pyright]
+include = [".", "backend", "tests", "evaluation"]
+extraPaths = [".", "backend", "evaluation"]

@@ -7,14 +7,16 @@
   ],
   "extraPaths": [
     ".",
-    "backend"
+    "backend",
+    "evaluation"
   ],
   "executionEnvironments": [
     {
       "root": ".",
       "extraPaths": [
         ".",
-        "backend"
+        "backend",
+        "evaluation"
       ]
     }
   ]

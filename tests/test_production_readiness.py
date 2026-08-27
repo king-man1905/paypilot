@@ -88,15 +88,15 @@ def test_node_specific_model_routing(monkeypatch):
 
     s_llm = get_llm(node_type="supervisor")
     assert s_llm is not None
-    assert s_llm.model == "nvidia/nemotron-3-nano-30b-a3b"
+    assert getattr(s_llm, "model", getattr(s_llm, "model_name", None)) == "nvidia/nemotron-3-nano-30b-a3b"
 
     a_llm = get_llm(node_type="aggregator")
     assert a_llm is not None
-    assert a_llm.model == "nvidia/nemotron-3-super-120b-a12b"
+    assert getattr(a_llm, "model", getattr(a_llm, "model_name", None)) == "nvidia/nemotron-3-super-120b-a12b"
 
     r_llm = get_llm(node_type="recovery")
     assert r_llm is not None
-    assert r_llm.model == "nvidia/nemotron-3-super-120b-a12b"
+    assert getattr(r_llm, "model", getattr(r_llm, "model_name", None)) == "nvidia/nemotron-3-super-120b-a12b"
 
 
 def test_custom_env_override_model_routing(monkeypatch):
@@ -107,13 +107,16 @@ def test_custom_env_override_model_routing(monkeypatch):
     monkeypatch.setenv("RECOVERY_MODEL", "custom/recovery-model")
 
     s_llm = get_llm(node_type="supervisor")
-    assert s_llm.model == "custom/supervisor-model"
+    assert s_llm is not None
+    assert getattr(s_llm, "model", getattr(s_llm, "model_name", None)) == "custom/supervisor-model"
 
     a_llm = get_llm(node_type="aggregator")
-    assert a_llm.model == "custom/aggregator-model"
+    assert a_llm is not None
+    assert getattr(a_llm, "model", getattr(a_llm, "model_name", None)) == "custom/aggregator-model"
 
     r_llm = get_llm(node_type="recovery")
-    assert r_llm.model == "custom/recovery-model"
+    assert r_llm is not None
+    assert getattr(r_llm, "model", getattr(r_llm, "model_name", None)) == "custom/recovery-model"
 
 
 # ============================================================================

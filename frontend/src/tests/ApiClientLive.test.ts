@@ -4,7 +4,8 @@ import { apiClient, BASE_URL } from '../api/client';
 const BACKEND_URL =
   (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL) ||
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
-  'http://localhost:8000';
+  BASE_URL ||
+  'https://paypilot-pjye.onrender.com';
 
 const HEADERS = {
   'Content-Type': 'application/json',

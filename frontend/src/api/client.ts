@@ -21,8 +21,22 @@ import {
   MOCK_SLO_STATUS,
 } from './mockData';
 
-const rawBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || '';
-export const BASE_URL = rawBaseUrl.replace(/\/+$/, '');
+const DEFAULT_PROD_API_URL = 'https://paypilot-pjye.onrender.com';
+
+const getBaseUrl = (): string => {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '';
+    }
+  }
+  return DEFAULT_PROD_API_URL;
+};
+
+export const BASE_URL = getBaseUrl().replace(/\/+$/, '');
 
 class PayPilotApiClient {
   private getHeaders(customHeaders?: Record<string, string>): HeadersInit {

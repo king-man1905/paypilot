@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-27T22:13:02.594706+00:00",
+  "timestamp": "2026-08-27T22:32:19.086161+00:00",
   "phase": 21,
   "benchmark_type": "LOCAL BENCHMARK / SIMULATION",
   "methodology_disclaimer": "SAFETY & DATA HONESTY: Measured results reflect local process execution and simulated traffic workloads on local hardware. Production deployments with distributed Redis clusters and multi-zone network hops will exhibit different latency profiles.",
@@ -12,7 +12,7 @@
       "p95_ms": 0.0007,
       "p99_ms": 0.0012,
       "min_ms": 0.0005,
-      "max_ms": 0.0075,
+      "max_ms": 0.007,
       "sample_count": 1000
     }
   },
@@ -24,7 +24,7 @@
       "p95_ms": 0.0011,
       "p99_ms": 0.0012,
       "min_ms": 0.0009,
-      "max_ms": 0.0102,
+      "max_ms": 0.0114,
       "sample_count": 1000
     }
   },
@@ -37,12 +37,12 @@
     "duplicate_jobs": 0,
     "exact_single_job_guaranteed": true,
     "stats": {
-      "mean_ms": 0.0029,
+      "mean_ms": 0.0028,
       "p50_ms": 0.0016,
-      "p95_ms": 0.0068,
-      "p99_ms": 0.0206,
+      "p95_ms": 0.0075,
+      "p99_ms": 0.0168,
       "min_ms": 0.0011,
-      "max_ms": 0.0206,
+      "max_ms": 0.0168,
       "sample_count": 50
     }
   },
@@ -50,75 +50,75 @@
     "description": "Cross-tenant isolated key reservation latency (LOCAL BENCHMARK / SIMULATION)",
     "tenants_tested": 50,
     "stats": {
-      "mean_ms": 0.0043,
-      "p50_ms": 0.0043,
-      "p95_ms": 0.0045,
-      "p99_ms": 0.0047,
+      "mean_ms": 0.0048,
+      "p50_ms": 0.0044,
+      "p95_ms": 0.0047,
+      "p99_ms": 0.0049,
       "min_ms": 0.002,
-      "max_ms": 0.0142,
+      "max_ms": 0.328,
       "sample_count": 1000
     }
   },
   "section_e_quota_exhaustion": {
     "description": "Quota consumption check vs exhaustion rejection (LOCAL BENCHMARK / SIMULATION)",
     "normal_consumption_check": {
-      "mean_ms": 0.0041,
-      "p50_ms": 0.0033,
-      "p95_ms": 0.0038,
-      "p99_ms": 0.0062,
-      "min_ms": 0.0028,
-      "max_ms": 0.6733,
+      "mean_ms": 0.0028,
+      "p50_ms": 0.0028,
+      "p95_ms": 0.0029,
+      "p99_ms": 0.0032,
+      "min_ms": 0.0026,
+      "max_ms": 0.0101,
       "sample_count": 1000
     },
     "quota_exhaustion_rejection": {
-      "mean_ms": 0.0037,
-      "p50_ms": 0.0036,
-      "p95_ms": 0.0041,
-      "p99_ms": 0.0048,
-      "min_ms": 0.0031,
-      "max_ms": 0.0254,
+      "mean_ms": 0.0027,
+      "p50_ms": 0.0026,
+      "p95_ms": 0.0032,
+      "p99_ms": 0.0036,
+      "min_ms": 0.0024,
+      "max_ms": 0.029,
       "sample_count": 1000
     }
   },
   "section_f_queue_saturation": {
     "description": "Queue saturation / active job limit check latency (LOCAL BENCHMARK / SIMULATION)",
     "stats": {
-      "mean_ms": 0.0008,
-      "p50_ms": 0.0006,
-      "p95_ms": 0.0007,
-      "p99_ms": 0.0017,
-      "min_ms": 0.0006,
-      "max_ms": 0.1231,
+      "mean_ms": 0.0006,
+      "p50_ms": 0.0005,
+      "p95_ms": 0.0006,
+      "p99_ms": 0.0006,
+      "min_ms": 0.0005,
+      "max_ms": 0.0025,
       "sample_count": 1000
     }
   },
   "section_g_redis_fallback": {
     "description": "Graceful Redis store fallback latencies (LOCAL BENCHMARK / SIMULATION)",
     "redis_rate_limiter_fallback": {
-      "mean_ms": 0.0019,
-      "p50_ms": 0.0015,
-      "p95_ms": 0.0032,
-      "p99_ms": 0.009,
-      "min_ms": 0.0007,
-      "max_ms": 0.0588,
+      "mean_ms": 0.0011,
+      "p50_ms": 0.0008,
+      "p95_ms": 0.0018,
+      "p99_ms": 0.0068,
+      "min_ms": 0.0006,
+      "max_ms": 0.0246,
       "sample_count": 1000
     },
     "redis_idempotency_store_fallback": {
-      "mean_ms": 0.064,
-      "p50_ms": 0.0495,
-      "p95_ms": 0.115,
-      "p99_ms": 0.15,
-      "min_ms": 0.0021,
-      "max_ms": 3.4675,
+      "mean_ms": 0.0395,
+      "p50_ms": 0.0309,
+      "p95_ms": 0.0779,
+      "p99_ms": 0.0857,
+      "min_ms": 0.0017,
+      "max_ms": 2.7645,
       "sample_count": 1000
     },
     "redis_quota_manager_fallback": {
-      "mean_ms": 0.0062,
-      "p50_ms": 0.0048,
-      "p95_ms": 0.0079,
-      "p99_ms": 0.033,
-      "min_ms": 0.0024,
-      "max_ms": 0.525,
+      "mean_ms": 0.0038,
+      "p50_ms": 0.0026,
+      "p95_ms": 0.0044,
+      "p99_ms": 0.0089,
+      "min_ms": 0.0022,
+      "max_ms": 0.5772,
       "sample_count": 1000
     }
   },
@@ -128,7 +128,7 @@
     "concurrent_race_single_job_verified": true,
     "concurrent_race_duplicate_jobs": 0,
     "cross_tenant_isolation_verified": true,
-    "quota_check_overhead_ms": 0.0041,
+    "quota_check_overhead_ms": 0.0028,
     "zero_network_blocking": true,
     "bounded_memory_growth": true
   }

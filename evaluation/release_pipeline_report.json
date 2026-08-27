@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-27T22:15:05.761242+00:00",
+  "timestamp": "2026-08-27T22:34:36.640076+00:00",
   "pipeline_environment": "LOCAL PRODUCTION RELEASE SIMULATION / BENCHMARK",
   "candidate_version": "v1.23.1-faulty",
   "stable_version": "v1.23.0",
@@ -13,7 +13,7 @@
     {
       "stage": "Stage 1: Secret & Static Security Scan",
       "status": "PASSED",
-      "duration_ms": 1791.68,
+      "duration_ms": 1676.6,
       "scanned_files": 1056,
       "leaks_found": 0,
       "leak_details": []
@@ -30,12 +30,12 @@
       "status": "PASSED",
       "total_cases": 32,
       "pass_rate_pct": 100.0,
-      "duration_ms": 3262.15
+      "duration_ms": 4196.11
     },
     {
       "stage": "Stage 4: Docker & Container Configuration Gate",
       "status": "PASSED",
-      "duration_ms": 0.36,
+      "duration_ms": 0.75,
       "issues": []
     },
     {
@@ -43,7 +43,7 @@
       "status": "PASSED",
       "migrations_applied": 3,
       "checksum_verified": true,
-      "duration_ms": 182.07
+      "duration_ms": 267.64
     },
     {
       "stage": "Stage 6: Deployment Simulation & Smoke Test",
@@ -63,10 +63,10 @@
       "rollback_triggered": true,
       "active_version": "v1.23.0",
       "failed_candidate_version": "v1.23.1-faulty",
-      "rollback_duration_ms": 3.52,
+      "rollback_duration_ms": 8.49,
       "rollback_health_verified": true,
-      "duration_ms": 3.57,
-      "message": "Promotion blocked due to upstream failure. Automated rollback executed in 3.52ms. Active version restored to v1.23.0 with verified health."
+      "duration_ms": 8.57,
+      "message": "Promotion blocked due to upstream failure. Automated rollback executed in 8.49ms. Active version restored to v1.23.0 with verified health."
     }
   ]
 }

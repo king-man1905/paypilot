@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-27T22:15:05.762014+00:00",
+  "timestamp": "2026-08-27T22:34:36.641588+00:00",
   "benchmark_environment": "LOCAL BENCHMARK / SIMULATION",
   "overall_status": "PASSED",
   "targets": {
@@ -16,7 +16,7 @@
     {
       "scenario": "forward_versioned_migrations",
       "migrations_applied": 3,
-      "duration_ms": 180.951,
+      "duration_ms": 241.757,
       "all_applied_in_ledger": true,
       "checksums_valid": true,
       "corrupted_schemas": 0
@@ -25,7 +25,7 @@
       "scenario": "versioned_migration_rollback",
       "migrations_rolled_back": 1,
       "rolled_back_version": "003_backup_metadata",
-      "duration_ms": 23.419,
+      "duration_ms": 34.589,
       "ledger_updated_to_pending": true,
       "broken_rollbacks": 0
     },
@@ -33,7 +33,7 @@
       "scenario": "healthy_candidate_promotion",
       "action": "PROMOTED",
       "active_version": "v1.23.0",
-      "duration_ms": 5463.384,
+      "duration_ms": 5977.387,
       "stages_passed": 7,
       "total_stages": 7,
       "unhandled_failures": 0
@@ -43,7 +43,7 @@
       "action": "ROLLED_BACK",
       "active_version": "v1.23.0",
       "failed_candidate": "v1.23.1-faulty",
-      "duration_ms": 5244.912,
+      "duration_ms": 6153.284,
       "rollback_success": true,
       "unhandled_failures": 0
     }

@@ -4,39 +4,39 @@
   "measurements": {
     "config_loading": {
       "iterations": 1000,
-      "mean_ms": 0.0799,
-      "median_ms": 0.0691,
-      "p95_ms": 0.1308,
-      "p99_ms": 0.1583,
-      "min_ms": 0.0462,
-      "max_ms": 0.3703
+      "mean_ms": 0.0787,
+      "median_ms": 0.0734,
+      "p95_ms": 0.118,
+      "p99_ms": 0.1846,
+      "min_ms": 0.045,
+      "max_ms": 0.5784
     },
     "config_validation": {
       "iterations": 1000,
-      "mean_ms": 0.0025,
-      "median_ms": 0.0027,
-      "p95_ms": 0.0032,
-      "p99_ms": 0.0061,
-      "min_ms": 0.001,
-      "max_ms": 0.0764
+      "mean_ms": 0.002,
+      "median_ms": 0.002,
+      "p95_ms": 0.0022,
+      "p99_ms": 0.0028,
+      "min_ms": 0.0017,
+      "max_ms": 0.0099
     },
     "secret_lookup": {
       "iterations": 1000,
-      "mean_ms": 0.0032,
-      "median_ms": 0.0038,
-      "p95_ms": 0.0043,
-      "p99_ms": 0.0073,
-      "min_ms": 0.0013,
-      "max_ms": 0.0132
+      "mean_ms": 0.0028,
+      "median_ms": 0.0028,
+      "p95_ms": 0.0031,
+      "p99_ms": 0.0033,
+      "min_ms": 0.0027,
+      "max_ms": 0.009
     },
     "snapshot_generation": {
       "iterations": 1000,
-      "mean_ms": 0.0135,
-      "median_ms": 0.0124,
-      "p95_ms": 0.0197,
-      "p99_ms": 0.0263,
-      "min_ms": 0.0066,
-      "max_ms": 0.161
+      "mean_ms": 0.0147,
+      "median_ms": 0.0139,
+      "p95_ms": 0.0156,
+      "p99_ms": 0.0283,
+      "min_ms": 0.0122,
+      "max_ms": 0.2094
     }
   },
   "disclaimer": "Local microbenchmark measurements obtained in an offline test harness."

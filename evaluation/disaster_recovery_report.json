@@ -1,13 +1,13 @@
 {
   "benchmark_type": "LOCAL_DISASTER_RECOVERY_SIMULATION",
-  "timestamp": "2026-08-27T22:13:40.332488+00:00",
+  "timestamp": "2026-08-27T22:32:59.636623+00:00",
   "disclaimer": "Measured locally using SQLite and MockChatNVIDIA. Demonstrates cryptographic integrity, snapshot restore speed, and 100% financial parity under simulated corruption, but does not represent cloud multi-region automated failover.",
   "dataset_rows": 15000,
-  "backup_duration_ms": 54.87,
+  "backup_duration_ms": 89.99,
   "backup_size_bytes": 6770688,
-  "verify_duration_ms": 5.68,
-  "restore_duration_ms": 10.05,
-  "parity_audit_duration_ms": 173.72,
+  "verify_duration_ms": 11.74,
+  "restore_duration_ms": 15.66,
+  "parity_audit_duration_ms": 196.81,
   "financial_parity_pct": 100.0,
   "duplicate_primary_keys": 0,
   "post_restore_metrics": {
@@ -24,6 +24,6 @@
     "what_if_1pct_gain": 627474.86,
     "what_if_2pct_gain": 1254949.72
   },
-  "rto_local_measured_ms": 70.6,
+  "rto_local_measured_ms": 117.38999999999999,
   "rpo_local_measured": "0s (Point-in-time snapshot)"
 }

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-27T22:15:28.164841+00:00",
+  "timestamp": "2026-08-27T22:35:10.309622+00:00",
   "validation_environment": "LOCAL PRODUCTION READINESS VALIDATION / SIMULATION",
   "overall_status": "PASSED",
   "total_steps": 15,
@@ -11,7 +11,7 @@
       "command": "internal_static_check",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 3.04,
+      "duration_ms": 44.16,
       "issues": []
     },
     {
@@ -19,23 +19,23 @@
       "command": "pytest.main(['-q'])",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 56996.11
+      "duration_ms": 85184.26
     },
     {
       "step": "32-case Offline Multi-Agent Evaluation",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/run_evaluation.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 6231.53,
-      "stdout_tail": "l Consistency:\n100.0%\n\nRecommendation Correctness:\n100.0%\n\nResponse Completeness:\n100.0%\n\nAverage Latency:\n108.39 ms\n\nP95 Latency:\n209.67 ms\n\nOverall Pass Rate:\n100.0%\n\nAll benchmark cases PASSED with ZERO failures.\n\nDetailed evaluation report saved to: E:\\paypilot\\evaluation\\evaluation_report.json\n",
-      "stderr_tail": "enue_agent', 'payment_agent', 'checkout_agent', 'customer_agent']\n2026-08-28 03:43:01,390 [INFO] backend.agents.recovery_agent: Generated deterministic executive recovery briefing fallback.\n2026-08-28 03:43:01,390 [INFO] backend.agents.recovery_agent: Recovery agent generated 4 prioritized actions.\n"
+      "duration_ms": 6383.89,
+      "stdout_tail": "l Consistency:\n100.0%\n\nRecommendation Correctness:\n100.0%\n\nResponse Completeness:\n100.0%\n\nAverage Latency:\n109.98 ms\n\nP95 Latency:\n192.64 ms\n\nOverall Pass Rate:\n100.0%\n\nAll benchmark cases PASSED with ZERO failures.\n\nDetailed evaluation report saved to: E:\\paypilot\\evaluation\\evaluation_report.json\n",
+      "stderr_tail": "enue_agent', 'payment_agent', 'checkout_agent', 'customer_agent']\n2026-08-28 04:02:18,017 [INFO] backend.agents.recovery_agent: Generated deterministic executive recovery briefing fallback.\n2026-08-28 04:02:18,017 [INFO] backend.agents.recovery_agent: Recovery agent generated 4 prioritized actions.\n"
     },
     {
       "step": "Configuration & Secret Boundary Benchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/configuration_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 236.41,
+      "duration_ms": 230.46,
       "stdout_tail": "ms\n\n==========================================================================================\nConfiguration benchmark report successfully saved to: E:\\paypilot\\evaluation\\configuration_benchmark_report.json\n==========================================================================================\n\n",
       "stderr_tail": ""
     },
@@ -44,34 +44,34 @@
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/traffic_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 675.71,
-      "stdout_tail": ": 0.0045 ms)\nSection E: Quota Normal Check Mean:        0.0041 ms (P95: 0.0038 ms)\nSection F: Queue Saturation Check Mean:    0.0008 ms (P95: 0.0007 ms)\nSection G: Redis Fallback Mean:            0.0019 ms (P95: 0.0032 ms)\n============================================================================\n",
-      "stderr_tail": "2026-08-28 03:43:02,498 [INFO] Starting Phase 21 Hardened Traffic Management & Idempotency Benchmark...\n2026-08-28 03:43:02,595 [INFO] Phase 21 Traffic Benchmark Report successfully saved to: E:\\paypilot\\evaluation\\traffic_benchmark_report.json\n"
+      "duration_ms": 594.33,
+      "stdout_tail": ": 0.0047 ms)\nSection E: Quota Normal Check Mean:        0.0028 ms (P95: 0.0029 ms)\nSection F: Queue Saturation Check Mean:    0.0006 ms (P95: 0.0006 ms)\nSection G: Redis Fallback Mean:            0.0011 ms (P95: 0.0018 ms)\n============================================================================\n",
+      "stderr_tail": "2026-08-28 04:02:19,021 [INFO] Starting Phase 21 Hardened Traffic Management & Idempotency Benchmark...\n2026-08-28 04:02:19,087 [INFO] Phase 21 Traffic Benchmark Report successfully saved to: E:\\paypilot\\evaluation\\traffic_benchmark_report.json\n"
     },
     {
       "step": "Distributed Job & Multi-Worker Benchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/distributed_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 34606.9,
+      "duration_ms": 37202.45,
       "stdout_tail": "===============================================================================\nDistributed benchmark report successfully saved to: E:\\paypilot\\evaluation\\distributed_benchmark_report.json\n==============================================================================================================\n",
-      "stderr_tail": ":36,928 [INFO] backend.agents.recovery_agent: Recovery agent generated 4 prioritized actions.\n2026-08-28 03:43:36,929 [INFO] paypilot.jobs.tasks: [req-w4-j20-019] Background analysis finished in 210.63ms | Intent: 'what_if' | Agents: ['revenue_agent', 'payment_agent', 'recovery_agent'] | Actions: 4\n"
+      "stderr_tail": ":55,933 [INFO] backend.agents.recovery_agent: Recovery agent generated 4 prioritized actions.\n2026-08-28 04:02:55,933 [INFO] paypilot.jobs.tasks: [req-w4-j20-019] Background analysis finished in 363.31ms | Intent: 'what_if' | Agents: ['revenue_agent', 'payment_agent', 'recovery_agent'] | Actions: 4\n"
     },
     {
       "step": "Disaster Recovery & Financial Parity Benchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/disaster_recovery_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 3351.33,
+      "duration_ms": 3677.65,
       "stdout_tail": "=======================================================================================\nDisaster recovery benchmark report successfully saved to: E:\\paypilot\\evaluation\\disaster_recovery_report.json\n====================================================================================================\n",
-      "stderr_tail": "-08-28 03:43:40,135 [INFO] paypilot.storage.connection: Initializing database engine for: sqlite:///E:\\paypilot\\data\\benchmark_dr\\bench_paypilot.db\n2026-08-28 03:43:40,135 [INFO] paypilot.storage.connection: Initializing database engine for: sqlite:///E:\\paypilot\\data\\benchmark_dr\\bench_paypilot.db\n"
+      "stderr_tail": "-08-28 04:02:59,416 [INFO] paypilot.storage.connection: Initializing database engine for: sqlite:///E:\\paypilot\\data\\benchmark_dr\\bench_paypilot.db\n2026-08-28 04:02:59,417 [INFO] paypilot.storage.connection: Initializing database engine for: sqlite:///E:\\paypilot\\data\\benchmark_dr\\bench_paypilot.db\n"
     },
     {
       "step": "Distributed Tracing & Overhead Benchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/tracing_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 40794.84,
+      "duration_ms": 46152.31,
       "stdout_tail": "-----------------------------------------------------------------------------------------\n\n[Phase 3/3] Tracing overhead report successfully saved to: E:\\paypilot\\evaluation\\tracing_benchmark_report.json\n===============================================================================================\n\n",
       "stderr_tail": ""
     },
@@ -80,7 +80,7 @@
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/slo_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 7258.7,
+      "duration_ms": 7976.32,
       "stdout_tail": " 10 async jobs\n\n===============================================================================================\nSLO evaluation benchmark report saved to: E:\\paypilot\\evaluation\\slo_benchmark_report.json\n===============================================================================================\n\n",
       "stderr_tail": ""
     },
@@ -89,8 +89,8 @@
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/performance_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 16085.96,
-      "stdout_tail": " P95: 6857.87ms | Throughput: 7.22 req/s\n\n------------------------------------------------------------------------------------------\nPerformance report saved to: E:\\paypilot\\evaluation\\performance_report.json\n==========================================================================================\n",
+      "duration_ms": 19868.25,
+      "stdout_tail": " P95: 9290.06ms | Throughput: 5.31 req/s\n\n------------------------------------------------------------------------------------------\nPerformance report saved to: E:\\paypilot\\evaluation\\performance_report.json\n==========================================================================================\n",
       "stderr_tail": ""
     },
     {
@@ -98,45 +98,45 @@
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/job_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 5197.06,
+      "duration_ms": 5225.06,
       "stdout_tail": "an Latency  : 0.001 ms / get_job call\n------------------------------------------------------------------------------------------\nJob benchmark report saved to: E:\\paypilot\\evaluation\\job_benchmark_report.json\n==========================================================================================\n",
-      "stderr_tail": "03:44:49,637 [INFO] paypilot.jobs.tasks: [job] Background analysis finished in 153.84ms | Intent: 'what_if' | Agents: ['revenue_agent', 'payment_agent', 'recovery_agent'] | Actions: 4\n2026-08-28 03:44:49,637 [INFO] paypilot.jobs.runner: [worker_ae33f1f3][job_50527e44ecce] Job COMPLETED in 153.99ms.\n"
+      "stderr_tail": "04:04:18,864 [INFO] paypilot.jobs.tasks: [job] Background analysis finished in 213.87ms | Intent: 'what_if' | Agents: ['revenue_agent', 'payment_agent', 'recovery_agent'] | Actions: 4\n2026-08-28 04:04:18,865 [INFO] paypilot.jobs.runner: [worker_66502f47][job_d23cdc314e28] Job COMPLETED in 215.29ms.\n"
     },
     {
       "step": "Graceful Shutdown & Drain Microbenchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/shutdown_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 2519.91,
+      "duration_ms": 2485.3,
       "stdout_tail": ": 'completed', 'lost_jobs': 0, 'duplicate_executions': 0}\n - concurrency_counter_integrity: {'scenario': 'concurrency_counter_integrity', 'slots_tested': 3, 'leaked_active_slots': 0, 'counter_integrity_verified': True}\n================================================================================\n",
-      "stderr_tail": "t.jobs.store: [job_6e00405b29c1] Recovered stale running job lease (worker: worker_crashed_node_1) -> re-claimed by worker_recovery_node_2.\n2026-08-28 03:44:52,206 [INFO] paypilot.benchmark.shutdown: Graceful shutdown benchmark report written to E:\\paypilot\\evaluation\\shutdown_benchmark_report.json\n"
+      "stderr_tail": "t.jobs.store: [job_6fe7e821c398] Recovered stale running job lease (worker: worker_crashed_node_1) -> re-claimed by worker_recovery_node_2.\n2026-08-28 04:04:21,422 [INFO] paypilot.benchmark.shutdown: Graceful shutdown benchmark report written to E:\\paypilot\\evaluation\\shutdown_benchmark_report.json\n"
     },
     {
       "step": "Release Engineering & Safe Rollback Benchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/release_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 31665.66,
-      "stdout_tail": ": 'faulty_candidate_automatic_rollback', 'action': 'ROLLED_BACK', 'active_version': 'v1.23.0', 'failed_candidate': 'v1.23.1-faulty', 'duration_ms': 5244.912, 'rollback_success': True, 'unhandled_failures': 0}\n==========================================================================================\n",
-      "stderr_tail": ": [job] Background analysis finished in 23303.59ms | Intent: 'revenue' | Agents: ['revenue_agent', 'payment_agent', 'checkout_agent', 'customer_agent', 'recovery_agent'] | Actions: 4\n2026-08-28 03:45:23,816 [INFO] paypilot.jobs.runner: [worker_82134958][job_43a07727e422] Job COMPLETED in 23304.5ms.\n"
+      "duration_ms": 44600.83,
+      "stdout_tail": ": 'faulty_candidate_automatic_rollback', 'action': 'ROLLED_BACK', 'active_version': 'v1.23.0', 'failed_candidate': 'v1.23.1-faulty', 'duration_ms': 6153.284, 'rollback_success': True, 'unhandled_failures': 0}\n==========================================================================================\n",
+      "stderr_tail": " [job] Background analysis finished in 35464.69ms | Intent: 'revenue' | Agents: ['revenue_agent', 'payment_agent', 'checkout_agent', 'customer_agent', 'recovery_agent'] | Actions: 4\n2026-08-28 04:05:05,944 [INFO] paypilot.jobs.runner: [worker_fb901612][job_5761f4b1ec60] Job COMPLETED in 35465.62ms.\n"
     },
     {
       "step": "Kubernetes Deployment & Manifest Benchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/kubernetes_deployment_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 177.63,
-      "stdout_tail": "==============\nStatus           : PASSED\nManifest Status  : KUBERNETES MANIFEST VALIDATED\nRuntime Status   : LOCAL KUBERNETES RUNTIME NOT EXECUTED\nProduction Scope : NOT CLOUD PRODUCTION VALIDATED\nDuration         : 44.66 ms\n==========================================================================\n",
-      "stderr_tail": "8-28 03:45:24,252 [INFO] paypilot.benchmark.k8s_deployment: Executing Kubernetes Deployment & Manifest Validation Benchmark...\n2026-08-28 03:45:24,298 [INFO] paypilot.benchmark.k8s_deployment: Kubernetes deployment benchmark report written to E:\\paypilot\\evaluation\\kubernetes_deployment_report.json\n"
+      "duration_ms": 164.44,
+      "stdout_tail": "==============\nStatus           : PASSED\nManifest Status  : KUBERNETES MANIFEST VALIDATED\nRuntime Status   : LOCAL KUBERNETES RUNTIME NOT EXECUTED\nProduction Scope : NOT CLOUD PRODUCTION VALIDATED\nDuration         : 43.38 ms\n==========================================================================\n",
+      "stderr_tail": "8-28 04:05:06,432 [INFO] paypilot.benchmark.k8s_deployment: Executing Kubernetes Deployment & Manifest Validation Benchmark...\n2026-08-28 04:05:06,476 [INFO] paypilot.benchmark.k8s_deployment: Kubernetes deployment benchmark report written to E:\\paypilot\\evaluation\\kubernetes_deployment_report.json\n"
     },
     {
       "step": "Kubernetes Failure & HA Recovery Benchmark",
       "command": "C:\\Users\\aman7\\AppData\\Local\\Programs\\Python\\Python313\\python.exe evaluation/kubernetes_failure_benchmark.py",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 3856.86,
-      "stdout_tail": "(C)] redis_outage_fallback: PASSED (1.05ms)\n - [Database Capacity & Pool Safety (D)] cluster_connection_pool_safety: PASSED (0.04ms)\n - [Rolling Restart & Zero Downtime (F)] rolling_update_safety_parameters: PASSED (10.57ms)\n==========================================================================\n",
-      "stderr_tail": "8 [WARNING] paypilot.security.ratelimit: Redis unavailable for rate limiting (No module named 'redis'). Using local in-memory fallback.\n2026-08-28 03:45:27,832 [INFO] paypilot.benchmark.k8s_failure: Kubernetes failure benchmark report written to E:\\paypilot\\evaluation\\kubernetes_failure_report.json\n"
+      "duration_ms": 3822.6,
+      "stdout_tail": " (C)] redis_outage_fallback: PASSED (0.97ms)\n - [Database Capacity & Pool Safety (D)] cluster_connection_pool_safety: PASSED (0.03ms)\n - [Rolling Restart & Zero Downtime (F)] rolling_update_safety_parameters: PASSED (8.99ms)\n==========================================================================\n",
+      "stderr_tail": "3 [WARNING] paypilot.security.ratelimit: Redis unavailable for rate limiting (No module named 'redis'). Using local in-memory fallback.\n2026-08-28 04:05:10,013 [INFO] paypilot.benchmark.k8s_failure: Kubernetes failure benchmark report written to E:\\paypilot\\evaluation\\kubernetes_failure_report.json\n"
     }
   ]
 }

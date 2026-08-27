@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-27T22:14:52.205897+00:00",
+  "timestamp": "2026-08-27T22:34:21.420380+00:00",
   "benchmark_environment": "LOCAL BENCHMARK / SIMULATION",
   "overall_status": "PASSED",
   "targets": {
@@ -16,7 +16,7 @@
     {
       "scenario": "idle_shutdown",
       "active_jobs_at_start": 0,
-      "drain_duration_ms": 0.18,
+      "drain_duration_ms": 0.152,
       "drained_cleanly": true,
       "active_jobs_remaining": 0,
       "lost_jobs": 0
@@ -25,7 +25,7 @@
       "scenario": "active_jobs_drain",
       "jobs_submitted": 5,
       "jobs_completed": 5,
-      "drain_duration_ms": 61.561,
+      "drain_duration_ms": 61.575,
       "drained_cleanly": true,
       "active_jobs_remaining": 0,
       "lost_jobs": 0,
@@ -35,7 +35,7 @@
       "scenario": "lease_recovery_after_termination",
       "crashed_worker_id": "worker_crashed_node_1",
       "recovery_worker_id": "worker_recovery_node_2",
-      "recovery_latency_ms": 0.282,
+      "recovery_latency_ms": 0.186,
       "recovered_successfully": true,
       "final_job_status": "completed",
       "lost_jobs": 0,

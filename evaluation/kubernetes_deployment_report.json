@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-08-27T22:15:24.297156+00:00",
+  "timestamp": "2026-08-27T22:35:06.475982+00:00",
   "benchmark_environment": "KUBERNETES MANIFEST VALIDATED / STATIC BENCHMARK",
   "overall_status": "PASSED",
-  "duration_ms": 44.66,
+  "duration_ms": 43.38,
   "manifest_validation": {
     "all_present": true,
     "missing_files": [],

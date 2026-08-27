@@ -306,7 +306,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
     err = ErrorResponse(
         error=f"HTTP_{exc.status_code}",
-        detail=str(exc.detail),
+        detail=exc.detail,
         request_id=request_id,
         status_code=exc.status_code,
         timestamp=datetime.now(timezone.utc).isoformat(),

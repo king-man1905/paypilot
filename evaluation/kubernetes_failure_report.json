@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-08-27T22:15:27.829788+00:00",
+  "timestamp": "2026-08-27T22:35:10.012494+00:00",
   "benchmark_environment": "LOCAL FAILURE SIMULATION / BENCHMARK",
   "overall_status": "PASSED",
-  "total_duration_ms": 1346.32,
+  "total_duration_ms": 1350.67,
   "scenarios": [
     {
       "scenario": "api_shutdown_probe_transitions",
@@ -14,19 +14,19 @@
       "shutdown_ready_code": 503,
       "traffic_admission_blocked": true,
       "liveness_intact_during_drain": true,
-      "duration_ms": 283.54
+      "duration_ms": 289.46
     },
     {
       "scenario": "worker_crash_and_lease_recovery",
       "category": "Worker Fault Tolerance (B & G)",
       "status": "PASSED",
-      "job_id": "job_abbfa28b78bb",
+      "job_id": "job_782723f43ed0",
       "crashed_worker": "worker_crashed_node_1",
       "recovering_worker": "worker_failover_node_2",
       "duplicate_active_claims": 0,
       "lease_recovered": true,
       "final_job_status": "completed",
-      "duration_ms": 1051.03
+      "duration_ms": 1051.14
     },
     {
       "scenario": "redis_outage_fallback",
@@ -34,7 +34,7 @@
       "status": "PASSED",
       "fallback_engaged": true,
       "fallback_rate_limiting_functional": true,
-      "duration_ms": 1.05
+      "duration_ms": 0.97
     },
     {
       "scenario": "cluster_connection_pool_safety",
@@ -43,7 +43,7 @@
       "standard_cluster_connections": 36,
       "standard_cluster_safe": true,
       "oversized_cluster_detected_unsafe": true,
-      "duration_ms": 0.04
+      "duration_ms": 0.03
     },
     {
       "scenario": "rolling_update_safety_parameters",
@@ -52,7 +52,7 @@
       "max_unavailable": 0,
       "max_surge": 1,
       "termination_grace_period_seconds": 30,
-      "duration_ms": 10.57
+      "duration_ms": 8.99
     }
   ],
   "demarcation": {

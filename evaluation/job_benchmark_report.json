@@ -2,13 +2,13 @@
   "total_jobs_benchmark": 25,
   "workers_configured": 3,
   "submission_latency_ms": {
-    "mean": 0.112,
-    "p95": 0.502
+    "mean": 0.114,
+    "p95": 0.636
   },
   "execution_summary": {
-    "total_duration_seconds": 2.62,
-    "throughput_jobs_per_sec": 9.54,
-    "mean_job_execution_ms": 305.36,
+    "total_duration_seconds": 2.68,
+    "throughput_jobs_per_sec": 9.33,
+    "mean_job_execution_ms": 312.32,
     "success_rate_pct": 100.0
   },
   "polling_latency_ms": {

@@ -8,59 +8,59 @@
   "tracing_off": {
     "sequential": {
       "total_requests": 50,
-      "total_wall_time_s": 4.388,
-      "throughput_req_s": 11.4,
-      "mean_latency_ms": 87.76,
-      "median_latency_ms": 55.22,
-      "p95_latency_ms": 174.59,
-      "p99_latency_ms": 204.75
+      "total_wall_time_s": 4.559,
+      "throughput_req_s": 10.97,
+      "mean_latency_ms": 91.17,
+      "median_latency_ms": 77.2,
+      "p95_latency_ms": 188.69,
+      "p99_latency_ms": 209.98
     },
     "concurrent": {
       "total_requests": 125,
-      "total_wall_time_s": 14.363,
-      "throughput_req_s": 8.7,
-      "mean_latency_ms": 550.19,
-      "median_latency_ms": 395.3,
-      "p95_latency_ms": 1120.79,
-      "p99_latency_ms": 1267.96
+      "total_wall_time_s": 15.142,
+      "throughput_req_s": 8.26,
+      "mean_latency_ms": 575.59,
+      "median_latency_ms": 442.08,
+      "p95_latency_ms": 1179.14,
+      "p99_latency_ms": 1357.11
     }
   },
   "tracing_on": {
     "sequential": {
       "total_requests": 50,
-      "total_wall_time_s": 4.271,
-      "throughput_req_s": 11.71,
-      "mean_latency_ms": 85.42,
-      "median_latency_ms": 56.6,
-      "p95_latency_ms": 163.33,
-      "p99_latency_ms": 171.29
+      "total_wall_time_s": 4.359,
+      "throughput_req_s": 11.47,
+      "mean_latency_ms": 87.17,
+      "median_latency_ms": 68.01,
+      "p95_latency_ms": 169.9,
+      "p99_latency_ms": 177.42
     },
     "concurrent": {
       "total_requests": 125,
-      "total_wall_time_s": 14.327,
-      "throughput_req_s": 8.72,
-      "mean_latency_ms": 546.96,
-      "median_latency_ms": 411.61,
-      "p95_latency_ms": 1065.57,
-      "p99_latency_ms": 1178.06
+      "total_wall_time_s": 18.67,
+      "throughput_req_s": 6.7,
+      "mean_latency_ms": 714.09,
+      "median_latency_ms": 536.86,
+      "p95_latency_ms": 1447.23,
+      "p99_latency_ms": 1505.45
     }
   },
   "overhead_summary": {
     "sequential": {
-      "mean_overhead_ms": -2.34,
-      "mean_overhead_pct": -2.67,
-      "median_overhead_ms": 1.38,
-      "median_overhead_pct": 2.5,
-      "p95_overhead_ms": -11.26,
-      "p95_overhead_pct": -6.45
+      "mean_overhead_ms": -4.0,
+      "mean_overhead_pct": -4.39,
+      "median_overhead_ms": -9.19,
+      "median_overhead_pct": -11.9,
+      "p95_overhead_ms": -18.79,
+      "p95_overhead_pct": -9.96
     },
     "concurrent": {
-      "mean_overhead_ms": -3.23,
-      "mean_overhead_pct": -0.59,
-      "median_overhead_ms": 16.31,
-      "median_overhead_pct": 4.13,
-      "p95_overhead_ms": -55.22,
-      "p95_overhead_pct": -4.93
+      "mean_overhead_ms": 138.5,
+      "mean_overhead_pct": 24.06,
+      "median_overhead_ms": 94.78,
+      "median_overhead_pct": 21.44,
+      "p95_overhead_ms": 268.09,
+      "p95_overhead_pct": 22.74
     }
   },
   "statistical_analysis": "Sequential tracing in PayPilot adds minimal in-memory context tracking and span recording overhead. Minor differences (< \u00b12%) in local CPU-bound sequential execution represent local measurement jitter. Under concurrent execution (25 requests across 5 worker threads), synchronization on the circular trace store and thread context transitions contribute to measurable concurrency overhead."

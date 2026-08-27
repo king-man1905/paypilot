@@ -290,7 +290,7 @@ def test_agent_and_llm_traceability_in_audit(client):
 
         # Verify LLM metadata
         assert ev.llm_provider in ["nvidia", "deterministic_fallback", "mock"]
-        assert ev.model == "meta/llama-3.3-70b-instruct"
+        assert ev.model in ["nvidia/nemotron-3.5-lightning-30b-a3b", "meta/llama-3.3-70b-instruct"]
 
 
 def test_redaction_utility_functions():

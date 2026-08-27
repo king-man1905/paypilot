@@ -103,7 +103,7 @@ def get_llm(
         logger.info("No valid NVIDIA_API_KEY configured. Operating in deterministic fallback mode.")
         return None
 
-    target_model = (model or os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "meta/llama-3.3-70b-instruct")).strip()
+    target_model = (model or os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "nvidia/nemotron-3.5-lightning-30b-a3b")).strip()
     base_url = (os.getenv("NVIDIA_BASE_URL", NVIDIA_BASE_URL or "https://integrate.api.nvidia.com/v1")).strip()
     timeout_sec = float(os.getenv("LLM_REQUEST_TIMEOUT", LLM_REQUEST_TIMEOUT))
 
@@ -129,7 +129,7 @@ def get_llm(
                 base_url=base_url,
                 temperature=temperature,
                 timeout=timeout_sec,
-                max_retries=2,
+                max_retries=1,
             )
             logger.info(f"Initialized ChatOpenAI with NVIDIA endpoint and model '{target_model}'.")
             return _wrap_traced_llm(raw_llm, provider="nvidia", model=target_model)
@@ -150,7 +150,7 @@ def get_llm_info() -> Dict[str, Any]:
     active_llm = get_llm(temperature=0.0)
 
     provider_name = "nvidia" if active_llm is not None else "deterministic_fallback"
-    model_name = os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "meta/llama-3.3-70b-instruct") if active_llm is not None else "none"
+    model_name = os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "nvidia/nemotron-3.5-lightning-30b-a3b") if active_llm is not None else "none"
 
     if active_llm is not None:
         status_reason = "NVIDIA Live LLM active"

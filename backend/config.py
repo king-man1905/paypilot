@@ -213,12 +213,12 @@ class PayPilotSettings:
     # LLM & Inference Engine
     llm_provider: str = "nvidia"
     nvidia_api_key: str = ""
-    nvidia_model: str = "meta/llama-3.3-70b-instruct"
+    nvidia_model: str = "nvidia/nemotron-3.5-lightning-30b-a3b"
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
-    llm_request_timeout: float = 25.0
+    llm_request_timeout: float = 60.0
 
     # Resilience & Circuit Breaker
-    llm_max_retries: int = 2
+    llm_max_retries: int = 1
     llm_retry_base_delay: float = 0.5
     llm_retry_max_delay: float = 4.0
     circuit_breaker_failure_threshold: int = 3
@@ -332,10 +332,10 @@ class PayPilotSettings:
             data_seed=int(os.getenv("DATA_SEED", "42")),
             llm_provider=os.getenv("LLM_PROVIDER", "nvidia").strip().lower(),
             nvidia_api_key=nv_key,
-            nvidia_model=os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct").strip(),
+            nvidia_model=os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b").strip(),
             nvidia_base_url=os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip(),
-            llm_request_timeout=float(os.getenv("LLM_REQUEST_TIMEOUT", "25.0")),
-            llm_max_retries=int(os.getenv("LLM_MAX_RETRIES", "2")),
+            llm_request_timeout=float(os.getenv("LLM_REQUEST_TIMEOUT", "60.0")),
+            llm_max_retries=int(os.getenv("LLM_MAX_RETRIES", "1")),
             llm_retry_base_delay=float(os.getenv("LLM_RETRY_BASE_DELAY", "0.5")),
             llm_retry_max_delay=float(os.getenv("LLM_RETRY_MAX_DELAY", "4.0")),
             circuit_breaker_failure_threshold=int(os.getenv("CIRCUIT_BREAKER_FAILURE_THRESHOLD", "3")),
@@ -735,15 +735,15 @@ def validate_startup_config(settings: Optional[PayPilotSettings] = None) -> None
 DATA_PATH = ROOT_DIR / os.getenv("DATA_PATH", "data/processed/merchant_transactions.csv")
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "nvidia").strip().lower()
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "").strip()
-NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct").strip()
+NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b").strip()
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip()
 FASTAPI_HOST = os.getenv("FASTAPI_HOST", "0.0.0.0")
 FASTAPI_PORT = int(os.getenv("FASTAPI_PORT", 8000))
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 MAX_QUERY_LENGTH = int(os.getenv("MAX_QUERY_LENGTH", 1000))
 MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", 10))
-LLM_REQUEST_TIMEOUT = float(os.getenv("LLM_REQUEST_TIMEOUT", 25.0))
-LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", 2))
+LLM_REQUEST_TIMEOUT = float(os.getenv("LLM_REQUEST_TIMEOUT", 60.0))
+LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", 1))
 LLM_RETRY_BASE_DELAY = float(os.getenv("LLM_RETRY_BASE_DELAY", 0.5))
 LLM_RETRY_MAX_DELAY = float(os.getenv("LLM_RETRY_MAX_DELAY", 4.0))
 CIRCUIT_BREAKER_FAILURE_THRESHOLD = int(os.getenv("CIRCUIT_BREAKER_FAILURE_THRESHOLD", 3))

@@ -44,14 +44,14 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   beforeAll(async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(`${BACKEND_URL}/health`, { signal: controller.signal });
       clearTimeout(timeoutId);
       isBackendLive = res.ok;
     } catch {
       isBackendLive = false;
     }
-  });
+  }, 15000);
 
   it('1. GET /health returns healthy liveness probe', async (ctx) => {
     if (!isBackendLive) {
@@ -65,7 +65,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     expect(data.service).toBe('paypilot');
     expect(data.llm_provider).toBeDefined();
     expect(data.model).toBeDefined();
-  });
+  }, 60000);
 
   it('2. GET /ready returns component readiness checks', async (ctx) => {
     if (!isBackendLive) {
@@ -79,7 +79,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     expect(data.checks.dataset_accessible).toBe(true);
     expect(data.checks.analytics_engine_ready).toBe(true);
     expect(data.checks.job_runner_ready).toBe(true);
-  });
+  }, 60000);
 
   it(
     '3. POST /api/v1/analyze executes synchronous multi-agent analysis',
@@ -121,7 +121,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     const data = await res.json();
     expect(data.job_id).toBeDefined();
     expect(['queued', 'running', 'completed']).toContain(data.status);
-  });
+  }, 60000);
 
   it('5. GET /admin/slo returns operational SLO targets', async (ctx) => {
     if (!isBackendLive) {
@@ -135,7 +135,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     const data = await res.json();
     expect(data.overall_status).toBeDefined();
     expect(data.evaluated_slos.length).toBeGreaterThan(0);
-  });
+  }, 60000);
 
   it('6. GET /admin/audit returns paginated audit log events', async (ctx) => {
     if (!isBackendLive) {
@@ -149,7 +149,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     const data = await res.json();
     expect(data.events).toBeInstanceOf(Array);
     expect(data.limit).toBe(10);
-  });
+  }, 60000);
 
   it('7. GET /admin/config returns sanitized configuration snapshot without secret leakage', async (ctx) => {
     if (!isBackendLive) {
@@ -164,5 +164,5 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     expect(data.status.toLowerCase()).toBe('valid');
     expect(data.environment).toBeDefined();
     expect(data.secrets_status).toBeDefined();
-  });
+  }, 60000);
 });

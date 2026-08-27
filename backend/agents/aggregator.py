@@ -37,8 +37,9 @@ def _clean_llm_synthesis(text: str) -> str:
         return ""
     import re
 
-    # 1. Strip XML think tags
+    # 1. Strip XML think tags (including unclosed)
     cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+    cleaned = re.sub(r"<think>.*", "", cleaned, flags=re.DOTALL | re.IGNORECASE).strip()
 
     # 2. Match standalone report header line (never match inside bullet lists or inline mentions)
     header_pattern = re.compile(
@@ -51,29 +52,29 @@ def _clean_llm_synthesis(text: str) -> str:
 
     cleaned = cleaned[match.start():].strip()
 
-    # 3. Structural validation: must contain at least 2 real report sections/markers
-    structural_markers = [
-        r"Executive Summary",
-        r"Root-Cause Breakdown",
-        r"Prioritized Action Plan",
-        r"Recommendations",
-        r"Total Revenue",
-        r"Success Rate",
-        r"Failure Rate",
-        r"Loss Amount",
-    ]
-
-    found_count = 0
-    for marker in structural_markers:
-        if re.search(marker, cleaned, re.IGNORECASE):
-            found_count += 1
-
-    if found_count < 2 or len(cleaned) < 50:
+    # 3. Meta-commentary guardrails
+    lowered_start = cleaned[:350].lower()
+    if (
+        "thinking process" in lowered_start
+        or "analyze user input" in lowered_start
+        or "analyze request" in lowered_start
+        or "role: lead financial" in lowered_start
+        or "ground all conclusions strictly" in lowered_start
+    ):
         return ""
 
-    # 4. Meta-commentary guardrails
-    lowered_start = cleaned[:250].lower()
-    if "thinking process" in lowered_start or "analyze user input" in lowered_start:
+    # 4. Structural validation: must contain key sections
+    has_exec = bool(re.search(r"Executive Summary|Business Diagnosis", cleaned, re.IGNORECASE))
+    has_breakdown = bool(re.search(r"Root-Cause Breakdown|Top Revenue Leaks|Revenue Leaks|Findings", cleaned, re.IGNORECASE))
+    has_actions = bool(re.search(r"Prioritized Action|Recommendations|Action Plan", cleaned, re.IGNORECASE))
+
+    if not (has_exec and (has_breakdown or has_actions)) or len(cleaned) < 80:
+        return ""
+
+    # 5. Truncation detection: reject mid-sentence or mid-block cutoffs
+    if re.search(r"[,\(\[\{]\s*$", cleaned):
+        return ""
+    if re.search(r"(?:P\d\s*[-—:]|\d+\.\s*)$", cleaned):
         return ""
 
     return cleaned
@@ -218,7 +219,7 @@ def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
     from backend.observability.metrics import record_llm_call, record_error, record_retry
     from backend.utils.resilience import execute_with_retry, nvidia_circuit_breaker
 
-    llm = get_llm(node_type="aggregator", temperature=0.2)
+    llm = get_llm(node_type="aggregator", temperature=0.2, max_tokens=2048)
     synthesis_done = False
 
     if llm is not None and evidence:

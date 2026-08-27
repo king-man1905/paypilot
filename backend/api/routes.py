@@ -25,7 +25,15 @@ from backend.api.schemas import (
     ConfigDiagnosticsSchema,
 )
 from backend.agents.llm_factory import get_llm_info
-from backend.config import DATA_PATH, MAX_QUERY_LENGTH, get_config_diagnostics
+from backend.config import (
+    DATA_PATH,
+    MAX_QUERY_LENGTH,
+    NVIDIA_MODEL,
+    SUPERVISOR_MODEL,
+    AGGREGATOR_MODEL,
+    RECOVERY_MODEL,
+    get_config_diagnostics,
+)
 from backend.graph.run import run_pipeline
 from backend.jobs import (
     JobQueueFullError,
@@ -132,7 +140,7 @@ async def health_check() -> HealthResponse:
         status="healthy",
         service="paypilot",
         llm_provider=llm_info.get("active_provider", "nvidia"),
-        model=llm_info.get("active_model", "meta/llama-3.3-70b-instruct"),
+        model=llm_info.get("active_model", NVIDIA_MODEL),
         is_live_llm=llm_info.get("is_live_llm", False),
     )
 
@@ -195,7 +203,7 @@ async def readiness_check() -> ReadinessResponse:
         details={
             "total_transactions_loaded": analytics_count,
             "active_llm_provider": llm_info.get("active_provider", "nvidia"),
-            "model": llm_info.get("active_model", "meta/llama-3.3-70b-instruct"),
+            "model": llm_info.get("active_model", NVIDIA_MODEL),
             "is_live_llm": llm_info.get("is_live_llm", False),
             "runner_state": runner.state.value,
         },
@@ -756,8 +764,15 @@ async def analyze_merchant_query(
         executed_agents = result.get("executed_agents", [])
         raw_request.state.executed_agents = executed_agents
         raw_request.state.llm_provider = llm_info.get("active_provider", "nvidia")
-        raw_request.state.model = llm_info.get("active_model", "meta/llama-3.3-70b-instruct")
+        active_model_str = llm_info.get("active_model", NVIDIA_MODEL)
+        raw_request.state.model = active_model_str
         raw_request.state.fallback_used = not llm_info.get("is_live_llm", False)
+
+        node_models_dict = {
+            "supervisor": llm_info.get("supervisor_model", SUPERVISOR_MODEL),
+            "aggregator": llm_info.get("aggregator_model", AGGREGATOR_MODEL),
+            "recovery": llm_info.get("recovery_model", RECOVERY_MODEL),
+        } if llm_info.get("is_live_llm") else None
 
         evidence = result.get("evidence", {}) or {}
         analysis = result.get("analysis", {}) or {}
@@ -800,7 +815,8 @@ async def analyze_merchant_query(
             executed_agents=executed_agents,
             execution_duration_ms=duration_ms,
             llm_provider=llm_info.get("active_provider", "nvidia"),
-            model=llm_info.get("active_model", "meta/llama-3.3-70b-instruct"),
+            model=active_model_str,
+            node_models=node_models_dict,
             is_live_llm=llm_info.get("is_live_llm", False),
             success=True,
         )
@@ -821,7 +837,8 @@ async def analyze_merchant_query(
             final_answer=final_answer,
             estimated_recovery=estimated_recovery,
             llm_provider=llm_info.get("active_provider", "nvidia"),
-            model=llm_info.get("active_model", "meta/llama-3.3-70b-instruct"),
+            model=active_model_str,
+            node_models=node_models_dict,
             is_live_llm=llm_info.get("is_live_llm", False),
             execution_metadata=meta,
         )

@@ -65,8 +65,9 @@ def _clean_llm_synthesis(text: str) -> str:
         return ""
     import re
 
-    # 1. Strip XML think tags
+    # 1. Strip XML think tags (including unclosed)
     cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+    cleaned = re.sub(r"<think>.*", "", cleaned, flags=re.DOTALL | re.IGNORECASE).strip()
 
     # 2. Match standalone report header line (never match inside bullet lists or inline mentions)
     header_pattern = re.compile(
@@ -79,30 +80,42 @@ def _clean_llm_synthesis(text: str) -> str:
 
     cleaned = cleaned[match.start():].strip()
 
-    # 3. Structural validation: must contain at least 2 real report sections/markers
-    structural_markers = [
-        r"TOP REVENUE LEAKS",
-        r"PRIORITIZED ACTION(?:S|\s+PLAN)",
-        r"EXPECTED REVENUE UPSIDE",
-        r"EXECUTIVE RECOMMENDATION",
-        r"Realized Revenue",
-        r"Overall Payment Success Rate",
-        r"Observed Failed Volume",
-        r"Gross Lost Transaction",
-        r"Root-Cause Breakdown",
-    ]
-
-    found_count = 0
-    for marker in structural_markers:
-        if re.search(marker, cleaned, re.IGNORECASE):
-            found_count += 1
-
-    if found_count < 2 or len(cleaned) < 60:
+    # 3. Meta-commentary and prompt leakage guardrails
+    lowered_start = cleaned[:350].lower()
+    if (
+        "thinking process" in lowered_start
+        or "analyze user input" in lowered_start
+        or "analyze request" in lowered_start
+        or "chief financial intelligence officer" in lowered_start
+        or "ground all conclusions strictly" in lowered_start
+        or "output only the executive" in lowered_start
+    ):
         return ""
 
-    # 4. Meta-commentary guardrails
-    lowered_start = cleaned[:250].lower()
-    if "thinking process" in lowered_start or "analyze user input" in lowered_start:
+    # 4. Mandatory section structural validation
+    has_diagnosis = bool(re.search(r"(?:BUSINESS DIAGNOSIS|EXECUTIVE SUMMARY|Realized Revenue)", cleaned, re.IGNORECASE))
+    has_leaks = bool(re.search(r"TOP REVENUE LEAKS|Revenue Leaks|Payment Method Friction", cleaned, re.IGNORECASE))
+    has_actions = bool(re.search(r"PRIORITIZED ACTION(?:S|\s+PLAN)?", cleaned, re.IGNORECASE))
+    has_upside = bool(re.search(r"EXPECTED (?:REVENUE )?UPSIDE|Estimated Recoverable Opportunity", cleaned, re.IGNORECASE))
+    has_recommendation = bool(re.search(r"EXECUTIVE RECOMMENDATION", cleaned, re.IGNORECASE))
+    has_p1 = bool(re.search(r"(?:P1\b|\[P1\]|P1\s*[-—:])", cleaned))
+
+    # All key sections and at least P1 must be present for a complete report
+    if not (has_diagnosis and has_leaks and has_actions and has_upside and has_recommendation and has_p1):
+        return ""
+
+    if len(cleaned) < 120:
+        return ""
+
+    # 5. Truncation detection: check for cutoffs at the end of the text
+    if re.search(r"[,\(\[\{]\s*$", cleaned):
+        return ""
+    if re.search(r"(?:P\d\s*[-—:]|\d+\.\s*)$", cleaned):
+        return ""
+
+    # Verify that EXECUTIVE RECOMMENDATION has actual content following it
+    rec_match = re.search(r"EXECUTIVE RECOMMENDATION(?:\s*[-=]+\s*|\s*:\s*|\s*\n+)(.+)", cleaned, re.IGNORECASE | re.DOTALL)
+    if not rec_match or len(rec_match.group(1).strip()) < 10:
         return ""
 
     return cleaned
@@ -570,7 +583,7 @@ def recovery_agent_node(state: PayPilotState) -> PayPilotState:
         )
         from backend.utils.resilience import execute_with_retry, nvidia_circuit_breaker
 
-        llm = get_llm(node_type="recovery", temperature=0.2)
+        llm = get_llm(node_type="recovery", temperature=0.2, max_tokens=2048)
         synthesis_done = False
 
         if llm is not None and prioritized:

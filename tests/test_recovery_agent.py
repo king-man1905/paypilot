@@ -270,9 +270,11 @@ def test_recovery_agent_with_mocked_nvidia_llm(sample_evidence):
     mock_response = MagicMock()
     expected_report = (
         "BUSINESS DIAGNOSIS\n------------------\n"
-        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
-        "TOP REVENUE LEAKS\n1. Netbanking failure\n\n"
-        "PRIORITIZED ACTION PLAN\n[P1] Recommended P1 is dynamic UPI routing to recover INR 740,000."
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
+        "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
+        "PRIORITIZED ACTION PLAN\n[P1] Recommended P1 is dynamic UPI routing to recover INR 740,000.\n\n"
+        "EXPECTED REVENUE UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
+        "EXECUTIVE RECOMMENDATION\nExecute P1 as primary priority to recover revenue."
     )
     mock_response.content = expected_report
     mock_llm.invoke.return_value = mock_response
@@ -304,9 +306,11 @@ def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
     # Case A: Valid executive report -> accepted unchanged
     valid_report = (
         "BUSINESS DIAGNOSIS\n------------------\n"
-        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
         "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
-        "PRIORITIZED ACTION PLAN\n[P1] Gateway Routing"
+        "PRIORITIZED ACTION PLAN\n[P1] Gateway Routing to recover INR 740,000.\n\n"
+        "EXPECTED REVENUE UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
+        "EXECUTIVE RECOMMENDATION\nExecute P1 immediately."
     )
     assert _clean_llm_synthesis(valid_report).startswith("BUSINESS DIAGNOSIS")
 
@@ -314,8 +318,11 @@ def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
     think_with_report = (
         "<think>Analyzing numbers and revenue impact...</think>\n\n"
         "BUSINESS DIAGNOSIS\n"
-        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
-        "TOP REVENUE LEAKS\n1. Netbanking"
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
+        "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
+        "PRIORITIZED ACTIONS\nP1 — Gateway Routing to recover INR 740,000.\n\n"
+        "EXPECTED UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
+        "EXECUTIVE RECOMMENDATION\nExecute P1 immediately."
     )
     res_b = _clean_llm_synthesis(think_with_report)
     assert res_b.startswith("BUSINESS DIAGNOSIS")
@@ -343,15 +350,18 @@ def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
     )
     assert _clean_llm_synthesis(leak_case_d) == ""
 
-    # Case E: Incomplete report (< 2 markers) -> MUST return ""
+    # Case E: Incomplete report (missing terminal sections or cut off) -> MUST return ""
     incomplete_report = "BUSINESS DIAGNOSIS\n------------------\nShort incomplete draft without structure."
     assert _clean_llm_synthesis(incomplete_report) == ""
 
     # Case F: Valid report with Markdown heading -> accepted
     md_heading_report = (
         "## BUSINESS DIAGNOSIS\n"
-        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\n\n"
-        "### TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%"
+        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
+        "### TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
+        "### PRIORITIZED ACTIONS\nP1 — Dynamic Routing\n\n"
+        "### EXPECTED UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
+        "### EXECUTIVE RECOMMENDATION\nExecute P1 immediately."
     )
     assert _clean_llm_synthesis(md_heading_report).startswith("## BUSINESS DIAGNOSIS")
 

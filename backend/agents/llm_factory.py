@@ -35,7 +35,12 @@ def is_valid_key(key: Optional[str]) -> bool:
     return True
 
 
-def _wrap_traced_llm(raw_llm: BaseChatModel, provider: str, model: str) -> BaseChatModel:
+def _wrap_traced_llm(
+    raw_llm: BaseChatModel,
+    provider: str,
+    model: str,
+    node: Optional[str] = None,
+) -> BaseChatModel:
     """Wraps invoke/ainvoke on the ChatModel instance with distributed tracing while preserving class type."""
     if raw_llm is None:
         return None
@@ -45,7 +50,7 @@ def _wrap_traced_llm(raw_llm: BaseChatModel, provider: str, model: str) -> BaseC
 
     def traced_invoke(input: Any, config: Any = None, **kwargs: Any) -> Any:
         from backend.observability.tracing import trace_span
-        meta = {"provider": provider, "model": model}
+        meta = {"provider": provider, "model": model, "node": node or "general"}
         with trace_span("llm.generate", component="llm", metadata=meta):
             return orig_invoke(input, config=config, **kwargs)
 
@@ -60,7 +65,7 @@ def _wrap_traced_llm(raw_llm: BaseChatModel, provider: str, model: str) -> BaseC
     if orig_ainvoke:
         async def traced_ainvoke(input: Any, config: Any = None, **kwargs: Any) -> Any:
             from backend.observability.tracing import trace_span
-            meta = {"provider": provider, "model": model}
+            meta = {"provider": provider, "model": model, "node": node or "general"}
             with trace_span("llm.generate", component="llm", metadata=meta):
                 return await orig_ainvoke(input, config=config, **kwargs)
         try:
@@ -79,7 +84,7 @@ def get_llm(
     model: Optional[str] = None,
     node_type: Optional[str] = None,
     temperature: float = 0.0,
-    max_tokens: Optional[int] = 1024,
+    max_tokens: Optional[int] = 2048,
     api_key: Optional[str] = None,
     provider: Optional[str] = None,
 ) -> Optional[BaseChatModel]:
@@ -89,7 +94,7 @@ def get_llm(
         model: Optional explicit model name override.
         node_type: Optional agent node identifier ('supervisor', 'aggregator', 'recovery').
         temperature: Sampling temperature (0.0 for deterministic analysis).
-        max_tokens: Maximum completion tokens (default 1024 for full executive reports).
+        max_tokens: Maximum completion tokens (default 2048 for full executive reports).
         api_key: Optional explicit API key override.
         provider: Kept for backwards compatibility (supports 'nvidia' or None).
 
@@ -123,7 +128,7 @@ def get_llm(
 
     base_url = (os.getenv("NVIDIA_BASE_URL", NVIDIA_BASE_URL or "https://integrate.api.nvidia.com/v1")).strip()
     timeout_sec = float(os.getenv("LLM_REQUEST_TIMEOUT", LLM_REQUEST_TIMEOUT))
-    tokens_limit = max_tokens or 1024
+    tokens_limit = max_tokens or 2048
 
     # Preferred implementation: ChatNVIDIA from langchain_nvidia_ai_endpoints
     try:
@@ -137,7 +142,7 @@ def get_llm(
             max_tokens=tokens_limit,
         )
         logger.info(f"Initialized ChatNVIDIA with model '{target_model}'.")
-        return _wrap_traced_llm(raw_llm, provider="nvidia", model=target_model)
+        return _wrap_traced_llm(raw_llm, provider="nvidia", model=target_model, node=node_type)
     except Exception as e1:
         logger.warning(f"ChatNVIDIA initialization notice ({e1}), attempting ChatOpenAI with NVIDIA endpoint...")
         try:
@@ -149,10 +154,10 @@ def get_llm(
                 temperature=temperature,
                 timeout=timeout_sec,
                 max_tokens=tokens_limit,
-                max_retries=1,
+                max_retries=0,
             )
             logger.info(f"Initialized ChatOpenAI with NVIDIA endpoint and model '{target_model}'.")
-            return _wrap_traced_llm(raw_llm, provider="nvidia", model=target_model)
+            return _wrap_traced_llm(raw_llm, provider="nvidia", model=target_model, node=node_type)
         except Exception as e2:
             logger.error(f"Failed to initialize NVIDIA LLM via ChatOpenAI: {e2}")
             return None

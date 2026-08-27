@@ -67,6 +67,7 @@ class ExecutionMetadata(BaseModel):
     execution_duration_ms: float = Field(description="Total pipeline execution duration in milliseconds")
     llm_provider: str = Field(description="LLM provider utilized (NVIDIA or deterministic fallback)")
     model: str = Field(description="Model identifier utilized")
+    node_models: Optional[Dict[str, str]] = Field(default=None, description="Granular model identifiers utilized per agent node")
     is_live_llm: bool = Field(description="Whether live LLM inference was used")
     success: bool = Field(default=True, description="Pipeline execution success flag")
     timestamp: str = Field(
@@ -88,6 +89,7 @@ class AnalyzeResponse(BaseModel):
     estimated_recovery: Dict[str, Any] = Field(description="Aggregate estimated recoverable opportunity summary")
     llm_provider: str = Field(description="Active LLM provider name")
     model: str = Field(description="Active LLM model name")
+    node_models: Optional[Dict[str, str]] = Field(default=None, description="Granular model identifiers utilized per agent node")
     is_live_llm: bool = Field(description="Whether live LLM inference was used")
     execution_metadata: ExecutionMetadata = Field(description="Observability and timing metadata")
 

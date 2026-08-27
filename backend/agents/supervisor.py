@@ -162,7 +162,7 @@ def supervisor_node(state: PayPilotState) -> PayPilotState:
         state["required_agents"] = []
         return state
 
-    llm = get_llm(node_type="supervisor", temperature=0.0)
+    llm = get_llm(node_type="supervisor", temperature=0.0, max_tokens=256)
     decision: Optional[SupervisorDecision] = None
 
 

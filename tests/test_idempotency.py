@@ -102,6 +102,7 @@ class TestInMemoryIdempotencyStore:
         # 1. Initial reservation
         status, record = store.reserve(tenant_id, key, payload_hash, ttl_seconds=60)
         assert status == IdempotencyReservationStatus.RESERVED
+        assert record is not None
         assert record.status == "reserved"
         assert record.tenant_id == tenant_id
         assert record.key == key
@@ -117,13 +118,16 @@ class TestInMemoryIdempotencyStore:
         # 3. Exact replay
         replay_status, replay_record = store.reserve(tenant_id, key, payload_hash, ttl_seconds=60)
         assert replay_status == IdempotencyReservationStatus.REPLAY
+        assert replay_record is not None
         assert replay_record.job_id == "job-12345"
+        assert replay_record.response_payload is not None
         assert replay_record.response_payload["job_id"] == "job-12345"
 
         # 4. Conflict detection (same key, different payload)
         diff_payload_hash = compute_payload_hash({"query": "Completely different query"})
         conflict_status, conflict_record = store.reserve(tenant_id, key, diff_payload_hash, ttl_seconds=60)
         assert conflict_status == IdempotencyReservationStatus.CONFLICT
+        assert conflict_record is not None
         assert conflict_record.job_id == "job-12345"
 
     def test_multi_tenant_isolation(self):
@@ -135,10 +139,12 @@ class TestInMemoryIdempotencyStore:
         # Tenant A reserves
         stat_a, rec_a = store.reserve("tenant-a", key, hash_a)
         assert stat_a == IdempotencyReservationStatus.RESERVED
+        assert rec_a is not None
 
         # Tenant B reserves same key name with different payload
         stat_b, rec_b = store.reserve("tenant-b", key, hash_b)
         assert stat_b == IdempotencyReservationStatus.RESERVED
+        assert rec_b is not None
         assert rec_a.tenant_id == "tenant-a"
         assert rec_b.tenant_id == "tenant-b"
 
@@ -148,11 +154,11 @@ class TestInMemoryIdempotencyStore:
         key = "exp-key"
         payload_hash = compute_payload_hash({"q": "test"})
 
-        # Reserve with 0.1s TTL
-        stat, rec = store.reserve(tenant, key, payload_hash, ttl_seconds=0.1)
+        # Reserve with 1s TTL
+        stat, rec = store.reserve(tenant, key, payload_hash, ttl_seconds=1)
         assert stat == IdempotencyReservationStatus.RESERVED
 
-        time.sleep(0.15)
+        time.sleep(1.05)
 
         # Should be expired and re-reservable as new
         stat_after, rec_after = store.reserve(tenant, key, payload_hash, ttl_seconds=60)
@@ -313,6 +319,7 @@ class TestIdempotencyApiIntegration:
         # 2. Simulate worker completing the job
         runner = get_job_runner()
         job = runner.store.get_job(job_id)
+        assert job is not None
         job.status = "completed"
         job.result = {"analysis": "Mock analysis complete", "recovery_inr": 50000.0}
         runner.store.update_job(job)
@@ -339,6 +346,7 @@ class TestIdempotencyApiIntegration:
         # 2. Simulate worker failing the job
         runner = get_job_runner()
         job = runner.store.get_job(job_id)
+        assert job is not None
         job.status = "failed"
         job.error = {"message": "Upstream database connection timeout", "category": "provider_error"}
         runner.store.update_job(job)
@@ -486,6 +494,7 @@ class TestIdempotencyApiIntegration:
         assert len(replays) >= 1
 
         expected_fp = fingerprint_idempotency_key(raw_key)
+        assert replays[0].query_summary is not None
         assert expected_fp in replays[0].query_summary
         assert raw_key not in replays[0].query_summary
 
@@ -505,6 +514,7 @@ class TestIdempotencyApiIntegration:
         # Simulate completion
         runner = get_job_runner()
         job = runner.store.get_job(job_id)
+        assert job is not None
         job.status = "completed"
         runner.store.update_job(job)
 

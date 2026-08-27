@@ -110,6 +110,8 @@ def get_db_session() -> Session:
     global _GLOBAL_SESSION_FACTORY
     if _GLOBAL_SESSION_FACTORY is None:
         get_db_engine()
+    if _GLOBAL_SESSION_FACTORY is None:
+        raise RuntimeError("Database session factory failed to initialize.")
     return _GLOBAL_SESSION_FACTORY()
 
 

@@ -198,6 +198,32 @@ def _generate_deterministic_synthesis(query: str, evidence: Dict[str, Any], exec
     }
 
 
+def _compact_evidence_for_prompt(evidence: Dict[str, Any]) -> Dict[str, Any]:
+    """Prunes and compacts deep/lengthy time-series in evidence to avoid oversized LLM prompts."""
+    if not isinstance(evidence, dict):
+        return {}
+
+    compacted: Dict[str, Any] = {}
+    for section_key, section_val in evidence.items():
+        if not isinstance(section_val, dict):
+            compacted[section_key] = section_val
+            continue
+
+        sec_copy = dict(section_val)
+        if "weekly_trend" in sec_copy and isinstance(sec_copy["weekly_trend"], list):
+            sec_copy["weekly_trend"] = sec_copy["weekly_trend"][-4:]  # Last 4 weeks
+        if "monthly_trend" in sec_copy and isinstance(sec_copy["monthly_trend"], list):
+            sec_copy["monthly_trend"] = sec_copy["monthly_trend"][-6:]  # Last 6 months
+        if "top_overall_failure_reasons" in sec_copy and isinstance(sec_copy["top_overall_failure_reasons"], list):
+            sec_copy["top_overall_failure_reasons"] = sec_copy["top_overall_failure_reasons"][:5]
+        if "top_multidimensional_leaks" in sec_copy and isinstance(sec_copy["top_multidimensional_leaks"], list):
+            sec_copy["top_multidimensional_leaks"] = sec_copy["top_multidimensional_leaks"][:5]
+
+        compacted[section_key] = sec_copy
+
+    return compacted
+
+
 @trace_span("agent.aggregator", component="aggregator")
 def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
     """Consolidates evidence and produces executive synthesis via NVIDIA LLM (or deterministic fallback)."""
@@ -212,8 +238,6 @@ def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
         "evidence_sections": list(evidence.keys()),
         "key_facts": {},
     }
-
-
 
     if "revenue" in evidence and isinstance(evidence["revenue"], dict):
         health = evidence["revenue"].get("business_health", {})
@@ -251,9 +275,10 @@ def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
         else:
             t_llm = time.perf_counter()
             try:
+                compact_evidence = _compact_evidence_for_prompt(evidence)
                 prompt_content = (
                     f"Merchant Query: {query}\n\n"
-                    f"Factual Numerical Evidence Gathered:\n{json.dumps(evidence, indent=2, default=str)}\n\n"
+                    f"Factual Numerical Evidence Gathered:\n{json.dumps(compact_evidence, indent=2, default=str)}\n\n"
                     f"Synthesize this evidence into an Executive Diagnosis and Action Plan for the merchant."
                 )
 

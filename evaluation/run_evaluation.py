@@ -15,6 +15,7 @@ import argparse
 import json
 import logging
 import os
+import io
 import statistics
 import sys
 import time
@@ -25,7 +26,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-if hasattr(sys.stdout, "reconfigure"):
+if isinstance(sys.stdout, io.TextIOWrapper):
     sys.stdout.reconfigure(line_buffering=True)
 
 from backend.graph.run import run_pipeline

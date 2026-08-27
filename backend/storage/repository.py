@@ -109,7 +109,15 @@ class CSVTransactionRepository(BaseTransactionRepository):
             if not force_reload and self._cached_df is not None:
                 return self._cached_df
 
-            df = pd.read_csv(self.csv_path)
+            try:
+                df = pd.read_csv(self.csv_path, low_memory=False)
+            except Exception as e:
+                logger.warning(f"pd.read_csv C parser notice ({e}), retrying with engine='python'...")
+                try:
+                    df = pd.read_csv(self.csv_path, engine="python")
+                except Exception as e2:
+                    logger.error(f"Failed to read CSV at {self.csv_path} with engine='python': {e2}")
+                    raise
 
             if df.empty:
                 raise ValueError(f"Transaction dataset at {self.csv_path} is empty.")
@@ -119,7 +127,8 @@ class CSVTransactionRepository(BaseTransactionRepository):
                 raise ValueError(f"Dataset is missing required columns: {missing}")
 
             # Clean and normalize types
-            df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
+            df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+            df["amount"] = df["amount"].fillna(0.0)
             df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
             df["payment_status"] = df["payment_status"].astype(str).str.strip().str.upper()
             df["payment_method"] = df["payment_method"].astype(str).str.strip()
@@ -153,20 +162,21 @@ class CSVTransactionRepository(BaseTransactionRepository):
         product_category: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> pd.DataFrame:
+        """Retrieves in-memory filtered transactions from CSV."""
         df = self.load_dataframe()
-        filtered = df
+        filtered = pd.DataFrame(df.copy())
 
         if payment_method:
-            filtered = filtered[filtered["payment_method"] == payment_method]
+            filtered = pd.DataFrame(filtered[filtered["payment_method"] == payment_method])
         if payment_status:
-            filtered = filtered[filtered["payment_status"] == payment_status.upper()]
+            filtered = pd.DataFrame(filtered[filtered["payment_status"] == payment_status.upper()])
         if device_type:
-            filtered = filtered[filtered["device_type"] == device_type]
+            filtered = pd.DataFrame(filtered[filtered["device_type"] == device_type])
         if product_category:
-            filtered = filtered[filtered["product_category"] == product_category]
+            filtered = pd.DataFrame(filtered[filtered["product_category"] == product_category])
 
         if limit is not None and limit > 0:
-            filtered = filtered.head(limit)
+            filtered = pd.DataFrame(filtered.iloc[:limit])
 
         return filtered.copy()
 
@@ -220,7 +230,8 @@ class SQLTransactionRepository(BaseTransactionRepository):
                 return df
 
             # Parse and clean types to guarantee identical pandas behavior
-            df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
+            df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+            df["amount"] = df["amount"].fillna(0.0)
             df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
             df["payment_status"] = df["payment_status"].astype(str).str.strip().str.upper()
             df["payment_method"] = df["payment_method"].astype(str).str.strip()
@@ -282,7 +293,8 @@ class SQLTransactionRepository(BaseTransactionRepository):
             df = pd.read_sql_query(sql=text(query), con=conn, params=params)
 
         if not df.empty:
-            df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
+            df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+            df["amount"] = df["amount"].fillna(0.0)
             df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
 
         return df

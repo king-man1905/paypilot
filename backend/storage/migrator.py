@@ -63,7 +63,11 @@ def seed_database_from_csv(
         existing_count = int(res.scalar() or 0)
 
     # 3. Read and validate CSV
-    df = pd.read_csv(path)
+    try:
+        df = pd.read_csv(path, low_memory=False)
+    except Exception as e:
+        logger.warning(f"pd.read_csv C parser notice in migrator ({e}), retrying with engine='python'...")
+        df = pd.read_csv(path, engine="python")
     csv_count = len(df)
 
     if df.empty:
@@ -90,7 +94,8 @@ def seed_database_from_csv(
             conn.execute(text("DELETE FROM merchant_transactions"))
 
     # 6. Clean and convert data types
-    df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
+    df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+    df["amount"] = df["amount"].fillna(0.0)
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     df["failure_reason"] = df["failure_reason"].fillna("None").astype(str)
     df["refund_status"] = df["refund_status"].fillna("NO_REFUND").astype(str)

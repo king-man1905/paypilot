@@ -6,6 +6,7 @@ START -> Supervisor -> Specialist Agents -> Evidence Aggregator -> Recovery Agen
 
 import logging
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 
 from backend.graph.state import PayPilotState
 from backend.agents.supervisor import supervisor_node
@@ -19,7 +20,7 @@ from backend.agents.recovery_agent import recovery_agent_node
 logger = logging.getLogger(__name__)
 
 
-def build_paypilot_graph() -> StateGraph:
+def build_paypilot_graph() -> CompiledStateGraph:
     """Constructs and compiles the complete PayPilot multi-agent StateGraph workflow."""
     builder = StateGraph(PayPilotState)
 

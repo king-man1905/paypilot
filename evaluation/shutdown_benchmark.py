@@ -93,7 +93,10 @@ def benchmark_shutdown_with_active_jobs() -> Dict[str, Any]:
     drain_res = runner.drain(timeout_seconds=3.0)
     dur_ms = round((time.perf_counter() - t0) * 1000, 3)
 
-    completed_count = sum(1 for j in jobs if runner.get_job(j.job_id).status == JobStatus.COMPLETED.value)
+    completed_count = sum(
+        1 for j in jobs
+        if (rec := runner.get_job(j.job_id)) is not None and rec.status == JobStatus.COMPLETED.value
+    )
 
     return {
         "scenario": "active_jobs_drain",

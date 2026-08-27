@@ -11,7 +11,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 import uuid
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -113,9 +113,11 @@ def get_concurrency_semaphore() -> asyncio.Semaphore:
     global _fallback_semaphore
     try:
         loop = asyncio.get_running_loop()
-        if not hasattr(loop, "_paypilot_concurrency_semaphore"):
-            loop._paypilot_concurrency_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
-        return loop._paypilot_concurrency_semaphore
+        sem = getattr(loop, "_paypilot_concurrency_semaphore", None)
+        if sem is None:
+            sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+            setattr(loop, "_paypilot_concurrency_semaphore", sem)
+        return sem
     except RuntimeError:
         if _fallback_semaphore is None:
             _fallback_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
@@ -205,11 +207,15 @@ async def request_observability_middleware(request: Request, call_next):
     start_time = time.perf_counter()
     logger.info(f"--> [{request_id}][{trace_id}] {request.method} {request.url.path}")
 
+    response: Optional[Response] = None
     try:
         with trace_span("http.request", component="http", metadata={"method": request.method, "endpoint": request.url.path}):
             semaphore = get_concurrency_semaphore()
             async with semaphore:
                 response = await call_next(request)
+
+        if response is None:
+            response = Response(content=b'{"detail":"Internal Server Error"}', status_code=500, media_type="application/json")
 
         duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
         response.headers["X-Request-ID"] = request_id

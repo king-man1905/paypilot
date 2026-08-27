@@ -233,6 +233,7 @@ class JobRunner:
         )
         token = set_current_trace_context(root_ctx)
 
+        result: Any = None
         try:
             with trace_span("job.execute", component="job", metadata={"job_id": job.job_id, "task_type": job.task_type}):
                 result = target_fn(*args, **kwargs)

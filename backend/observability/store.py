@@ -10,7 +10,7 @@ import logging
 import threading
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from backend.config import PERSISTENCE_BACKEND, REDIS_URL
 
@@ -335,8 +335,9 @@ class RedisMetricsStore(BaseMetricsStore):
             return
 
         try:
-            import redis
-            client = redis.Redis.from_url(self.redis_url, socket_timeout=2.0, decode_responses=True)
+            import importlib
+            redis_mod = importlib.import_module("redis")
+            client = redis_mod.Redis.from_url(self.redis_url, socket_timeout=2.0, decode_responses=True)
             client.ping()
             self._client = client
             self._is_connected = True

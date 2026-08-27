@@ -4,11 +4,12 @@ Allows testing and demonstrating the complete LangGraph agentic recovery workflo
 """
 
 import argparse
+import io
 import sys
 from backend.graph.workflow import paypilot_graph
 from backend.agents.llm_factory import get_llm_info
 
-if hasattr(sys.stdout, "reconfigure"):
+if isinstance(sys.stdout, io.TextIOWrapper):
     sys.stdout.reconfigure(line_buffering=True)
 
 

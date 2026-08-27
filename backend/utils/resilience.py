@@ -54,7 +54,7 @@ TRANSIENT_KEYWORDS = (
 )
 
 
-def is_transient_error(exc: Exception) -> bool:
+def is_transient_error(exc: Optional[Exception]) -> bool:
     """Determines whether an exception is transient (network/timeout/throttle) or permanent."""
     if exc is None:
         return False

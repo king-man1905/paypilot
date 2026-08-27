@@ -8,13 +8,12 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional
 from sqlalchemy import (
-    Column,
     DateTime,
     Float,
     Index,
     String,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 
 Base = declarative_base()
 
@@ -24,19 +23,19 @@ class TransactionModel(Base):
 
     __tablename__ = "merchant_transactions"
 
-    transaction_id = Column(String(32), primary_key=True, nullable=False)
-    timestamp = Column(DateTime, nullable=False, index=True)
-    merchant_id = Column(String(64), nullable=False, index=True)
-    customer_id = Column(String(64), nullable=False, index=True)
-    amount = Column(Float, nullable=False)
-    payment_method = Column(String(32), nullable=False, index=True)
-    payment_status = Column(String(32), nullable=False, index=True)
-    failure_reason = Column(String(64), nullable=False, default="None")
-    device_type = Column(String(32), nullable=False, index=True)
-    customer_type = Column(String(32), nullable=False)
-    product_category = Column(String(64), nullable=False, index=True)
-    refund_status = Column(String(32), nullable=False, default="NO_REFUND")
-    checkout_step_reached = Column(String(64), nullable=False, default="PAYMENT_COMPLETED")
+    transaction_id: Mapped[str] = mapped_column(String(32), primary_key=True, nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    merchant_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    customer_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    payment_method: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    payment_status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    failure_reason: Mapped[str] = mapped_column(String(64), nullable=False, default="None")
+    device_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    customer_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    product_category: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    refund_status: Mapped[str] = mapped_column(String(32), nullable=False, default="NO_REFUND")
+    checkout_step_reached: Mapped[str] = mapped_column(String(64), nullable=False, default="PAYMENT_COMPLETED")
 
     # Composite B-tree indexes for accelerated multidimensional queries
     __table_args__ = (
@@ -108,25 +107,25 @@ class AuditEventModel(Base):
 
     __tablename__ = "paypilot_audit_events"
 
-    event_id = Column(String(32), primary_key=True, nullable=False)
-    timestamp = Column(String(64), nullable=False, index=True)
-    event_type = Column(String(64), nullable=False, index=True)
-    request_id = Column(String(64), nullable=False, index=True)
-    endpoint = Column(String(128), nullable=False)
-    http_method = Column(String(16), nullable=False)
-    client_id = Column(String(64), nullable=False, index=True)
-    role = Column(String(32), nullable=False)
-    intent = Column(String(64), nullable=True)
-    executed_agents_json = Column(String(512), nullable=False, default="[]")
-    status = Column(String(32), nullable=False)
-    status_code = Column(Float, nullable=False, default=200)
-    duration_ms = Column(Float, nullable=False, default=0.0)
-    llm_provider = Column(String(32), nullable=True)
-    model = Column(String(64), nullable=True)
-    retry_count = Column(Float, nullable=False, default=0)
-    fallback_used = Column(String(16), nullable=False, default="false")
-    error_category = Column(String(64), nullable=True)
-    query_summary = Column(String(256), nullable=True)
+    event_id: Mapped[str] = mapped_column(String(32), primary_key=True, nullable=False)
+    timestamp: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    request_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    endpoint: Mapped[str] = mapped_column(String(128), nullable=False)
+    http_method: Mapped[str] = mapped_column(String(16), nullable=False)
+    client_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(32), nullable=False)
+    intent: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    executed_agents_json: Mapped[str] = mapped_column(String(512), nullable=False, default="[]")
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    status_code: Mapped[float] = mapped_column(Float, nullable=False, default=200.0)
+    duration_ms: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    llm_provider: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    model: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    retry_count: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    fallback_used: Mapped[str] = mapped_column(String(16), nullable=False, default="false")
+    error_category: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    query_summary: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
 
     __table_args__ = (
         Index("idx_audit_tenant_type", "client_id", "event_type"),

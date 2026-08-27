@@ -21,8 +21,10 @@ from sqlalchemy import (
     String,
     Text,
 )
+from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.storage.models import Base
+from backend.utils.redaction import redact_sensitive_dict
 
 
 class JobStatus(str, Enum):
@@ -83,31 +85,28 @@ class JobRecord:
         )
 
 
-from backend.utils.redaction import redact_sensitive_dict
-
-
 class JobModel(Base):
     """Relational table model representing shared background jobs."""
 
     __tablename__ = "paypilot_jobs"
 
-    job_id = Column(String(32), primary_key=True, nullable=False)
-    task_type = Column(String(64), nullable=False, default="async_analysis")
-    client_id = Column(String(64), nullable=False, index=True)
-    role = Column(String(32), nullable=False, default="analyst")
-    request_id = Column(String(64), nullable=True, index=True)
-    trace_id = Column(String(64), nullable=True, index=True)
-    status = Column(String(32), nullable=False, index=True, default=JobStatus.QUEUED.value)
-    worker_id = Column(String(64), nullable=True, index=True)
-    created_at = Column(String(64), nullable=False)
-    started_at = Column(String(64), nullable=True)
-    completed_at = Column(String(64), nullable=True)
-    duration_ms = Column(Float, nullable=True)
-    parameters_json = Column(Text, nullable=False, default="{}")
-    result_json = Column(Text, nullable=True)
-    error_json = Column(Text, nullable=True)
-    retry_count = Column(Integer, nullable=False, default=0)
-    fallback_used = Column(Boolean, nullable=False, default=False)
+    job_id: Mapped[str] = mapped_column(String(32), primary_key=True, nullable=False)
+    task_type: Mapped[str] = mapped_column(String(64), nullable=False, default="async_analysis")
+    client_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="analyst")
+    request_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True, default=JobStatus.QUEUED.value)
+    worker_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    created_at: Mapped[str] = mapped_column(String(64), nullable=False)
+    started_at: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    completed_at: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    duration_ms: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    parameters_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    result_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    fallback_used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     __table_args__ = (
         Index("idx_job_tenant_status", "client_id", "status"),

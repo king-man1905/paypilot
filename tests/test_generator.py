@@ -55,4 +55,4 @@ def test_injected_leakage_patterns():
     # UPI transactions exist and have valid failure reasons
     upi_failed = df[(df["payment_method"] == "UPI") & (df["payment_status"] == "FAILED")]
     assert len(upi_failed) > 0
-    assert "UPI_APP_NOT_RESPONDING" in upi_failed["failure_reason"].values
+    assert "UPI_APP_NOT_RESPONDING" in list(upi_failed["failure_reason"])

@@ -88,7 +88,9 @@ def run_job_benchmark() -> Dict[str, Any]:
         while (time.perf_counter() - t_exec_start) < timeout_seconds:
             time.sleep(0.05)
             completed_count = sum(
-                1 for j in submitted_jobs if runner.get_job(j.job_id).status in (JobStatus.COMPLETED.value, JobStatus.FAILED.value)
+                1 for j in submitted_jobs
+                if (rec := runner.get_job(j.job_id)) is not None
+                and rec.status in (JobStatus.COMPLETED.value, JobStatus.FAILED.value)
             )
             if completed_count == len(submitted_jobs):
                 all_completed = True
@@ -98,7 +100,11 @@ def run_job_benchmark() -> Dict[str, Any]:
         throughput_jobs_per_sec = round(len(submitted_jobs) / total_exec_duration_s, 2) if total_exec_duration_s > 0 else 0.0
 
         # Retrieve completed stats
-        job_durations = [runner.get_job(j.job_id).duration_ms for j in submitted_jobs if runner.get_job(j.job_id).duration_ms]
+        job_durations = [
+            float(rec.duration_ms)
+            for j in submitted_jobs
+            if (rec := runner.get_job(j.job_id)) is not None and rec.duration_ms is not None
+        ]
         avg_job_duration_ms = round(sum(job_durations) / len(job_durations), 2) if job_durations else 0.0
 
         print(f"      Total Time    : {total_exec_duration_s} s")

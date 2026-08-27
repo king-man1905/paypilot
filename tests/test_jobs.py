@@ -169,6 +169,7 @@ def test_async_job_lifecycle_to_completed_with_results(client):
                 break
 
         assert completed is True
+        assert final_data is not None
         assert final_data["status"] == "completed"
         assert final_data["duration_ms"] > 0
         assert final_data["result"] is not None
@@ -202,6 +203,7 @@ def test_failed_job_lifecycle_on_error(client):
             break
 
     j_final = runner.get_job(job.job_id)
+    assert j_final is not None
     assert j_final.status == JobStatus.FAILED.value
     assert j_final.error is not None
     assert j_final.error["category"] == "job_execution_error"
@@ -352,7 +354,7 @@ def test_job_metrics_integration():
     # Wait for completion
     for _ in range(50):
         time.sleep(0.05)
-        if runner.get_job(j.job_id).status == JobStatus.COMPLETED.value:
+        if (rec := runner.get_job(j.job_id)) is not None and rec.status == JobStatus.COMPLETED.value:
             break
 
     snapshot = get_metrics_snapshot()

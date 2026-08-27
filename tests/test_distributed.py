@@ -119,6 +119,7 @@ def test_sql_job_store_atomic_claim_and_duplicate_prevention():
 
     # Verify updated job state in database
     claimed_job = store.get_job("job_compete_001")
+    assert claimed_job is not None
     assert claimed_job.status == JobStatus.RUNNING.value
     assert claimed_job.worker_id == successful_claims[0][0]
     assert claimed_job.started_at is not None
@@ -193,6 +194,7 @@ def test_secret_non_exposure_in_distributed_job_store():
     store.save_job(job)
 
     fetched = store.get_job("job_secret_001")
+    assert fetched is not None
     raw_str = str(fetched.to_dict()).lower()
 
     assert "nvapi-1234567890abcdef" not in raw_str
@@ -219,6 +221,7 @@ def test_second_worker_cannot_claim_active_running_job():
 
     # Job remains owned by Worker A in RUNNING state
     active_job = store.get_job("job_active_lease_001")
+    assert active_job is not None
     assert active_job.status == JobStatus.RUNNING.value
     assert active_job.worker_id == "worker_A"
 
@@ -246,6 +249,7 @@ def test_stale_lease_recovery_after_worker_crash():
 
     # Verify job is recovered and re-assigned to Worker B
     recovered_job = store.get_job("job_crashed_worker_001")
+    assert recovered_job is not None
     assert recovered_job.status == JobStatus.RUNNING.value
     assert recovered_job.worker_id == "worker_healthy_B"
 
@@ -273,6 +277,7 @@ def test_recover_stale_jobs_batch_requeues_orphaned_jobs():
     # All 3 jobs are back in QUEUED status ready to be claimed
     for i in range(3):
         j = store.get_job(f"job_orphaned_{i:03d}")
+        assert j is not None
         assert j.status == JobStatus.QUEUED.value
         assert j.worker_id is None
         assert j.started_at is None

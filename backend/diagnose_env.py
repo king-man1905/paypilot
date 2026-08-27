@@ -56,9 +56,10 @@ def run_diagnosis():
             # Fallback check with ChatOpenAI
             try:
                 from langchain_openai import ChatOpenAI
+                from pydantic import SecretStr
                 llm2 = ChatOpenAI(
                     model=config_model,
-                    api_key=env_key,
+                    api_key=SecretStr(env_key),
                     base_url=config_base_url,
                 )
                 init_status = True

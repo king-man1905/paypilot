@@ -231,11 +231,11 @@ def get_failure_reasons(
     if data.empty:
         return []
 
-    subset = data[data["payment_status"].isin(["FAILED", "DROPPED"])]
+    subset = pd.DataFrame(data[data["payment_status"].isin(["FAILED", "DROPPED"])])
     if payment_method:
-        subset = subset[subset["payment_method"] == payment_method]
+        subset = pd.DataFrame(subset[subset["payment_method"] == payment_method])
     if device_type:
-        subset = subset[subset["device_type"] == device_type]
+        subset = pd.DataFrame(subset[subset["device_type"] == device_type])
 
     total_failures = len(subset)
     if total_failures == 0:
@@ -394,15 +394,15 @@ def get_revenue_lost_by_failure(df: Optional[pd.DataFrame] = None) -> Dict[str, 
             "user_drop_loss": 0.0,
         }
 
-    failed = data[data["payment_status"].isin(["FAILED", "DROPPED"])]
+    failed = pd.DataFrame(data[data["payment_status"].isin(["FAILED", "DROPPED"])])
     total_lost = round(float(failed["amount"].sum()), 2)
 
     # Technical failures (timeouts, app unresponsive, gateway downtime, latency)
     tech_reasons = ["BANK_SERVER_TIMEOUT", "UPI_APP_NOT_RESPONDING", "GATEWAY_DOWNTIME", "NETWORK_LATENCY"]
-    tech_failed = failed[failed["failure_reason"].isin(tech_reasons)]
+    tech_failed = pd.DataFrame(failed[failed["failure_reason"].isin(tech_reasons)])
     tech_loss = round(float(tech_failed["amount"].sum()), 2)
 
-    user_dropped = failed[failed["failure_reason"].isin(["USER_ABORTED", "INVALID_OTP", "INSUFFICIENT_FUNDS"])]
+    user_dropped = pd.DataFrame(failed[failed["failure_reason"].isin(["USER_ABORTED", "INVALID_OTP", "INSUFFICIENT_FUNDS"])])
     user_loss = round(float(user_dropped["amount"].sum()), 2)
 
     return {

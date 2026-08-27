@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 from typing import Any, Dict, List, Optional, Tuple, Union
+import pandas as pd
 
 from backend.config import (
     ROOT_DIR,
@@ -72,46 +73,53 @@ def compute_core_financial_metrics(repo: Optional[Any] = None) -> Dict[str, floa
     success_rate = float(success_mask.sum() / total_txns) if total_txns > 0 else 0.0
 
     # UPI & Card failure rates
-    upi_txns = df[df["payment_method"].astype(str).str.upper() == "UPI"]
+    pm_upper = pd.Series(df["payment_method"]).astype(str).str.upper()
+    ps_upper = pd.Series(df["payment_status"]).astype(str).str.upper()
+    dev_upper = pd.Series(df["device_type"]).astype(str).str.upper()
+    cat_upper = pd.Series(df["product_category"]).astype(str).str.upper()
+    ref_upper = pd.Series(df["refund_status"]).astype(str).str.upper()
+
+    upi_txns = df[pm_upper == "UPI"]
     upi_rate = (
-        float((upi_txns["payment_status"].astype(str).str.upper() == "FAILED").sum()) / len(upi_txns)
+        float((pd.Series(upi_txns["payment_status"]).astype(str).str.upper() == "FAILED").sum()) / len(upi_txns)
         if len(upi_txns) > 0
         else 0.0
     )
 
-    card_txns = df[df["payment_method"].astype(str).str.upper().str.contains("CARD")]
+    card_txns = df[pm_upper.str.contains("CARD")]
     card_rate = (
-        float((card_txns["payment_status"].astype(str).str.upper() == "FAILED").sum()) / len(card_txns)
+        float((pd.Series(card_txns["payment_status"]).astype(str).str.upper() == "FAILED").sum()) / len(card_txns)
         if len(card_txns) > 0
         else 0.0
     )
 
     # 3. Checkout device funnel rates
-    mobile_txns = df[df["device_type"].astype(str).str.upper() == "MOBILE"]
+    mobile_txns = df[dev_upper == "MOBILE"]
     mobile_rate = (
-        float((mobile_txns["payment_status"].astype(str).str.upper() == "SUCCESS").sum()) / len(mobile_txns)
+        float((pd.Series(mobile_txns["payment_status"]).astype(str).str.upper() == "SUCCESS").sum()) / len(mobile_txns)
         if len(mobile_txns) > 0
         else 0.0
     )
 
-    desktop_txns = df[df["device_type"].astype(str).str.upper() == "DESKTOP"]
+    desktop_txns = df[dev_upper == "DESKTOP"]
     desktop_rate = (
-        float((desktop_txns["payment_status"].astype(str).str.upper() == "SUCCESS").sum()) / len(desktop_txns)
+        float((pd.Series(desktop_txns["payment_status"]).astype(str).str.upper() == "SUCCESS").sum()) / len(desktop_txns)
         if len(desktop_txns) > 0
         else 0.0
     )
 
     # 4. Customer category refunds
-    elec_txns = df[df["product_category"].astype(str).str.upper().str.contains("ELECTRONICS")]
+    elec_txns = df[cat_upper.str.contains("ELECTRONICS")]
     elec_refund_rate = (
-        float((elec_txns["refund_status"].astype(str).str.upper() == "REFUNDED").sum()) / len(elec_txns)
+        float((pd.Series(elec_txns["refund_status"]).astype(str).str.upper() == "REFUNDED").sum()) / len(elec_txns)
         if len(elec_txns) > 0
         else 0.0
     )
 
-    fashion_txns = df[df["product_category"].astype(str).str.upper().str.contains("FASHION")]
+    fashion_txns = df[cat_upper.str.contains("FASHION")]
+    fashion_ref_mask = pd.Series(fashion_txns["refund_status"]).astype(str).str.upper() == "REFUNDED"
     fashion_refund_amt = float(
-        fashion_txns[fashion_txns["refund_status"].astype(str).str.upper() == "REFUNDED"]["amount"].sum()
+        fashion_txns[fashion_ref_mask]["amount"].sum()
     )
 
     # 5. What-if simulations

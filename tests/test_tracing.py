@@ -104,6 +104,7 @@ def test_trace_span_error_closure_and_no_orphans():
     assert len(recorded) == 1
     assert recorded[0].status == "ERROR"
     assert recorded[0].error_category == "ValueError"
+    assert recorded[0].error_message is not None
     assert "simulated failure" in recorded[0].error_message
 
 
@@ -177,13 +178,14 @@ def test_secret_redaction_in_span_records():
         "clean_field": "public_data",
     }
 
+    target_trace_id = None
     with pytest.raises(RuntimeError):
-        with trace_span("auth.check", component="security", metadata=sensitive_meta):
+        with trace_span("auth.check", component="security", metadata=sensitive_meta) as s:
+            target_trace_id = s.trace_id
             raise RuntimeError("Database connection to postgresql://user:my_secret_pw@host/db failed")
 
-    traces = store.list_traces()
-    assert len(traces) == 1
-    spans = store.get_trace(traces[0]["trace_id"])
+    assert target_trace_id is not None
+    spans = store.get_trace(target_trace_id)
     assert spans is not None
 
     dict_repr = spans[0].to_dict()

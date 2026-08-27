@@ -267,8 +267,9 @@ class RedisIdempotencyStore(BaseIdempotencyStore):
         if not self.redis_url:
             return
         try:
-            import redis
-            self._client = redis.Redis.from_url(
+            import importlib
+            redis_mod = importlib.import_module("redis")
+            self._client = redis_mod.Redis.from_url(
                 self.redis_url,
                 socket_timeout=1.0,
                 socket_connect_timeout=1.0,

@@ -298,11 +298,16 @@ def test_job_recovery_across_database_restart(setup_test_db, monkeypatch):
 
     # Check that job_r1 is now QUEUED and recoverable
     recovered_job = store2.get_job("job_r1")
+    assert recovered_job is not None
     assert recovered_job.status == JobStatus.QUEUED.value
 
     # Completed and failed jobs retain payloads
-    assert store2.get_job("job_c1").result == {"summary": "done"}
-    assert store2.get_job("job_f1").error == {"message": "network timeout"}
+    job_c1 = store2.get_job("job_c1")
+    assert job_c1 is not None
+    assert job_c1.result == {"summary": "done"}
+    job_f1 = store2.get_job("job_f1")
+    assert job_f1 is not None
+    assert job_f1.error == {"message": "network timeout"}
 
 
 def test_secret_omission_in_backup_manifests(setup_test_db, monkeypatch):

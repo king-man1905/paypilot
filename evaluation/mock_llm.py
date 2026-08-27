@@ -20,7 +20,13 @@ class MockChatNVIDIA(SimpleChatModel):
     model_name: str = "meta/llama-3.3-70b-instruct (mocked)"
     temperature: float = 0.0
 
-    def _call(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs: Any) -> str:
+    def _call(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> str:
         system_text = str(messages[0].content if messages else "").lower()
         last_msg = str(messages[-1].content if messages else "").lower()
         full_text = " ".join(str(m.content) for m in messages).lower()

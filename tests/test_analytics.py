@@ -334,12 +334,13 @@ def test_period_comparison(sample_df):
 
 def test_empty_dataframe_handling():
     """Verify robust handling of empty datasets without crashes."""
-    empty_df = pd.DataFrame(columns=[
+    cols = [
         "transaction_id", "timestamp", "merchant_id", "customer_id",
         "amount", "payment_method", "payment_status", "failure_reason",
         "device_type", "customer_type", "product_category", "refund_status",
         "checkout_step_reached",
-    ])
+    ]
+    empty_df = pd.DataFrame({c: [] for c in cols})
 
     assert get_total_revenue(empty_df) == 0.0
     assert get_transaction_count(empty_df) == 0

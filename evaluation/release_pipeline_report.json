@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-08-27T12:33:22.573779+00:00",
+  "timestamp": "2026-08-27T22:15:05.761242+00:00",
   "pipeline_environment": "LOCAL PRODUCTION RELEASE SIMULATION / BENCHMARK",
-  "candidate_version": "v1.23.1-broken",
+  "candidate_version": "v1.23.1-faulty",
   "stable_version": "v1.23.0",
   "overall_status": "PASSED",
   "final_action": "ROLLED_BACK",
@@ -13,8 +13,8 @@
     {
       "stage": "Stage 1: Secret & Static Security Scan",
       "status": "PASSED",
-      "duration_ms": 1597.13,
-      "scanned_files": 1052,
+      "duration_ms": 1791.68,
+      "scanned_files": 1056,
       "leaks_found": 0,
       "leak_details": []
     },
@@ -22,7 +22,7 @@
       "stage": "Stage 2: Unit & Integration Tests (Pytest)",
       "status": "PASSED",
       "return_code": 0,
-      "duration_ms": 0.02,
+      "duration_ms": 0.0,
       "note": "Validated via fast mode / parent session."
     },
     {
@@ -30,12 +30,12 @@
       "status": "PASSED",
       "total_cases": 32,
       "pass_rate_pct": 100.0,
-      "duration_ms": 3255.27
+      "duration_ms": 3262.15
     },
     {
       "stage": "Stage 4: Docker & Container Configuration Gate",
       "status": "PASSED",
-      "duration_ms": 0.38,
+      "duration_ms": 0.36,
       "issues": []
     },
     {
@@ -43,7 +43,7 @@
       "status": "PASSED",
       "migrations_applied": 3,
       "checksum_verified": true,
-      "duration_ms": 193.01
+      "duration_ms": 182.07
     },
     {
       "stage": "Stage 6: Deployment Simulation & Smoke Test",
@@ -62,11 +62,11 @@
       "promotion_blocked": true,
       "rollback_triggered": true,
       "active_version": "v1.23.0",
-      "failed_candidate_version": "v1.23.1-broken",
-      "rollback_duration_ms": 3.98,
+      "failed_candidate_version": "v1.23.1-faulty",
+      "rollback_duration_ms": 3.52,
       "rollback_health_verified": true,
-      "duration_ms": 4.1,
-      "message": "Promotion blocked due to upstream failure. Automated rollback executed in 3.98ms. Active version restored to v1.23.0 with verified health."
+      "duration_ms": 3.57,
+      "message": "Promotion blocked due to upstream failure. Automated rollback executed in 3.52ms. Active version restored to v1.23.0 with verified health."
     }
   ]
 }

@@ -15,6 +15,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+import io
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
@@ -24,7 +25,7 @@ from backend.observability.tracing import get_trace_store
 
 def run_live_audit() -> bool:
     """Executes the complete live API audit and returns True if all checks pass."""
-    if hasattr(sys.stdout, "reconfigure"):
+    if isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(encoding="utf-8")
 
     client = TestClient(app)

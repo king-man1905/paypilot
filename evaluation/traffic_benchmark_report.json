@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-25T04:25:33.812766+00:00",
+  "timestamp": "2026-08-27T22:13:02.594706+00:00",
   "phase": 21,
   "benchmark_type": "LOCAL BENCHMARK / SIMULATION",
   "methodology_disclaimer": "SAFETY & DATA HONESTY: Measured results reflect local process execution and simulated traffic workloads on local hardware. Production deployments with distributed Redis clusters and multi-zone network hops will exhibit different latency profiles.",
@@ -7,24 +7,24 @@
   "section_a_normal_traffic": {
     "description": "Normal allowed request rate limit check latency (LOCAL BENCHMARK / SIMULATION)",
     "stats": {
-      "mean_ms": 0.0007,
+      "mean_ms": 0.0006,
       "p50_ms": 0.0006,
-      "p95_ms": 0.0008,
-      "p99_ms": 0.0023,
+      "p95_ms": 0.0007,
+      "p99_ms": 0.0012,
       "min_ms": 0.0005,
-      "max_ms": 0.0106,
+      "max_ms": 0.0075,
       "sample_count": 1000
     }
   },
   "section_b_rate_limit_rejection": {
     "description": "Fast rejection 429 calculation latency (LOCAL BENCHMARK / SIMULATION)",
     "stats": {
-      "mean_ms": 0.0012,
-      "p50_ms": 0.0012,
-      "p95_ms": 0.0014,
-      "p99_ms": 0.0016,
-      "min_ms": 0.001,
-      "max_ms": 0.0174,
+      "mean_ms": 0.001,
+      "p50_ms": 0.001,
+      "p95_ms": 0.0011,
+      "p99_ms": 0.0012,
+      "min_ms": 0.0009,
+      "max_ms": 0.0102,
       "sample_count": 1000
     }
   },
@@ -37,12 +37,12 @@
     "duplicate_jobs": 0,
     "exact_single_job_guaranteed": true,
     "stats": {
-      "mean_ms": 0.0061,
-      "p50_ms": 0.0049,
-      "p95_ms": 0.0115,
-      "p99_ms": 0.0365,
-      "min_ms": 0.0012,
-      "max_ms": 0.0365,
+      "mean_ms": 0.0029,
+      "p50_ms": 0.0016,
+      "p95_ms": 0.0068,
+      "p99_ms": 0.0206,
+      "min_ms": 0.0011,
+      "max_ms": 0.0206,
       "sample_count": 50
     }
   },
@@ -50,85 +50,85 @@
     "description": "Cross-tenant isolated key reservation latency (LOCAL BENCHMARK / SIMULATION)",
     "tenants_tested": 50,
     "stats": {
-      "mean_ms": 0.0052,
-      "p50_ms": 0.0049,
-      "p95_ms": 0.0073,
-      "p99_ms": 0.0077,
-      "min_ms": 0.0025,
-      "max_ms": 0.0156,
+      "mean_ms": 0.0043,
+      "p50_ms": 0.0043,
+      "p95_ms": 0.0045,
+      "p99_ms": 0.0047,
+      "min_ms": 0.002,
+      "max_ms": 0.0142,
       "sample_count": 1000
     }
   },
   "section_e_quota_exhaustion": {
     "description": "Quota consumption check vs exhaustion rejection (LOCAL BENCHMARK / SIMULATION)",
     "normal_consumption_check": {
-      "mean_ms": 0.0033,
-      "p50_ms": 0.0032,
-      "p95_ms": 0.0041,
-      "p99_ms": 0.0061,
-      "min_ms": 0.0026,
-      "max_ms": 0.0485,
+      "mean_ms": 0.0041,
+      "p50_ms": 0.0033,
+      "p95_ms": 0.0038,
+      "p99_ms": 0.0062,
+      "min_ms": 0.0028,
+      "max_ms": 0.6733,
       "sample_count": 1000
     },
     "quota_exhaustion_rejection": {
-      "mean_ms": 0.0054,
-      "p50_ms": 0.0042,
-      "p95_ms": 0.0097,
-      "p99_ms": 0.0281,
-      "min_ms": 0.0028,
-      "max_ms": 0.104,
+      "mean_ms": 0.0037,
+      "p50_ms": 0.0036,
+      "p95_ms": 0.0041,
+      "p99_ms": 0.0048,
+      "min_ms": 0.0031,
+      "max_ms": 0.0254,
       "sample_count": 1000
     }
   },
   "section_f_queue_saturation": {
     "description": "Queue saturation / active job limit check latency (LOCAL BENCHMARK / SIMULATION)",
     "stats": {
-      "mean_ms": 0.0007,
-      "p50_ms": 0.0007,
+      "mean_ms": 0.0008,
+      "p50_ms": 0.0006,
       "p95_ms": 0.0007,
-      "p99_ms": 0.0008,
+      "p99_ms": 0.0017,
       "min_ms": 0.0006,
-      "max_ms": 0.007,
+      "max_ms": 0.1231,
       "sample_count": 1000
     }
   },
   "section_g_redis_fallback": {
     "description": "Graceful Redis store fallback latencies (LOCAL BENCHMARK / SIMULATION)",
     "redis_rate_limiter_fallback": {
-      "mean_ms": 0.0016,
-      "p50_ms": 0.001,
-      "p95_ms": 0.0033,
-      "p99_ms": 0.0119,
+      "mean_ms": 0.0019,
+      "p50_ms": 0.0015,
+      "p95_ms": 0.0032,
+      "p99_ms": 0.009,
       "min_ms": 0.0007,
-      "max_ms": 0.0489,
+      "max_ms": 0.0588,
       "sample_count": 1000
     },
     "redis_idempotency_store_fallback": {
-      "mean_ms": 0.0495,
-      "p50_ms": 0.0436,
-      "p95_ms": 0.0934,
-      "p99_ms": 0.145,
-      "min_ms": 0.0022,
-      "max_ms": 3.6846,
+      "mean_ms": 0.064,
+      "p50_ms": 0.0495,
+      "p95_ms": 0.115,
+      "p99_ms": 0.15,
+      "min_ms": 0.0021,
+      "max_ms": 3.4675,
       "sample_count": 1000
     },
     "redis_quota_manager_fallback": {
-      "mean_ms": 0.0052,
-      "p50_ms": 0.0034,
-      "p95_ms": 0.0095,
-      "p99_ms": 0.0377,
-      "min_ms": 0.0028,
-      "max_ms": 0.3352,
+      "mean_ms": 0.0062,
+      "p50_ms": 0.0048,
+      "p95_ms": 0.0079,
+      "p99_ms": 0.033,
+      "min_ms": 0.0024,
+      "max_ms": 0.525,
       "sample_count": 1000
     }
   },
   "conclusions": {
-    "rate_limit_overhead_ms": 0.0007,
-    "rate_limit_rejection_overhead_ms": 0.0012,
+    "rate_limit_overhead_ms": 0.0006,
+    "rate_limit_rejection_overhead_ms": 0.001,
     "concurrent_race_single_job_verified": true,
     "concurrent_race_duplicate_jobs": 0,
     "cross_tenant_isolation_verified": true,
-    "quota_check_overhead_ms": 0.0033,
+    "quota_check_overhead_ms": 0.0041,
     "zero_network_blocking": true,
     "bounded_memory_growth": true
   }

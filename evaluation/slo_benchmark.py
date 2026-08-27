@@ -106,7 +106,10 @@ def run_slo_benchmark() -> Dict[str, Any]:
 
         # Wait for completion
         for _ in range(100):
-            all_done = all(runner.get_job(jid).status in ("completed", "failed") for jid in job_ids)
+            all_done = all(
+                (rec := runner.get_job(jid)) is not None and rec.status in ("completed", "failed")
+                for jid in job_ids
+            )
             if all_done:
                 break
             time.sleep(0.05)

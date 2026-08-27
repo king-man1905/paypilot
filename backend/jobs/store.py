@@ -292,7 +292,8 @@ class SQLJobStore(BaseJobStore):
                 )
                 res = session.execute(stmt)
                 session.commit()
-                return (res.rowcount or 0) > 0
+                rowcount = getattr(res, "rowcount", 0) or 0
+                return rowcount > 0
 
     def recover_stale_jobs(self, lease_timeout_seconds: Optional[int] = None) -> int:
         """Finds and resets expired RUNNING jobs back to QUEUED."""
@@ -317,7 +318,7 @@ class SQLJobStore(BaseJobStore):
                 )
                 res = session.execute(stmt)
                 session.commit()
-                return res.rowcount or 0
+                return int(getattr(res, "rowcount", 0) or 0)
 
     def get_job(
         self,

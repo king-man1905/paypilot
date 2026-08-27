@@ -219,6 +219,7 @@ class TestQuotaApiIntegration:
 
             # Check quota manager counts: only 1 job was counted in total
             mgr = get_quota_manager()
+            assert isinstance(mgr, InMemoryQuotaManager)
             total_jobs_consumed = sum(mgr._job_counts.values())
             assert total_jobs_consumed == 1
 
@@ -291,8 +292,9 @@ class TestQuotaApiIntegration:
             mgr.record_job_finished("anonymous-dev")
             runner = get_job_runner()
             job = runner.store.get_job(job_id)
+            assert job is not None
             job.status = "failed"
-            job.error = "Execution timeout"
+            job.error = {"message": "Execution timeout"}
             runner.store.update_job(job)
 
             # Daily quota remains 1 consumed (capacity used)

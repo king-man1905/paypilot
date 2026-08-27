@@ -58,7 +58,7 @@ def _wrap_traced_llm(
         object.__setattr__(raw_llm, "invoke", traced_invoke)
     except Exception:
         try:
-            raw_llm.__dict__["invoke"] = traced_invoke
+            setattr(raw_llm, "invoke", traced_invoke)
         except Exception:
             pass
 
@@ -72,7 +72,7 @@ def _wrap_traced_llm(
             object.__setattr__(raw_llm, "ainvoke", traced_ainvoke)
         except Exception:
             try:
-                raw_llm.__dict__["ainvoke"] = traced_ainvoke
+                setattr(raw_llm, "ainvoke", traced_ainvoke)
             except Exception:
                 pass
 
@@ -147,13 +147,14 @@ def get_llm(
         logger.warning(f"ChatNVIDIA initialization notice ({e1}), attempting ChatOpenAI with NVIDIA endpoint...")
         try:
             from langchain_openai import ChatOpenAI
+            from pydantic import SecretStr
             raw_llm = ChatOpenAI(
                 model=target_model,
-                api_key=active_key,
+                api_key=SecretStr(active_key),
                 base_url=base_url,
                 temperature=temperature,
                 timeout=timeout_sec,
-                max_tokens=tokens_limit,
+                max_completion_tokens=tokens_limit,
                 max_retries=0,
             )
             logger.info(f"Initialized ChatOpenAI with NVIDIA endpoint and model '{target_model}'.")

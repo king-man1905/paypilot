@@ -22,17 +22,39 @@ Your role is to synthesize deterministic numerical evidence gathered by speciali
 
 Rules:
 1. Ground all conclusions STRICTLY in the provided numerical evidence. Never invent, hallucinate, or contradict the numbers.
-2. Structure your response with:
-   - Executive Summary: Direct answer to the merchant query with key metrics (e.g. Total Revenue, Success Rate, Loss Amounts).
-   - Root-Cause Breakdown: What is causing the issue (e.g. specific payment methods, error codes, device conversion gaps, or category refunds).
+2. Structure your response with exact section headers:
+   - Executive Summary: Direct answer to the merchant query with key metrics (Total Realized Revenue, Overall Success Rate, Loss Amounts).
+   - Root-Cause Breakdown: What is causing the issue (payment methods, error codes, device conversion gaps, or category refunds).
    - Prioritized Action Plan: 2-4 concrete, actionable steps the merchant can take immediately to recover revenue.
 3. Keep the tone professional, authoritative, and solutions-oriented.
-4. Output ONLY the executive synthesis. Do NOT output any thinking process, reasoning steps, preamble, conversational filler, or meta-commentary. Begin your response immediately with "Executive Summary:".
+4. Output ONLY the executive synthesis. Do NOT output any thinking process, reasoning steps, calculations, preamble, conversational filler, or meta-commentary. Begin your response immediately with "Executive Summary:" and terminate immediately after the Prioritized Action Plan.
 """
+
+FORBIDDEN_META_PHRASES_AGG = [
+    "let's compute",
+    "let's calculate",
+    "now let's",
+    "analyze user input",
+    "analyze request",
+    "map data",
+    "i think",
+    "we need to",
+    "the user wants",
+    "prompt",
+    "system prompt",
+    "thinking process",
+    "internal reasoning",
+    "<think>",
+    "</think>",
+    "here's how",
+]
 
 
 def _clean_llm_synthesis(text: str) -> str:
-    """Strips chain-of-thought, thinking processes, and meta-commentary from LLM aggregator output."""
+    """Strips chain-of-thought, thinking processes, and meta-commentary from LLM aggregator output.
+
+    Validates complete report structure and terminates cleanly without meta-text.
+    """
     if not text or not isinstance(text, str):
         return ""
     import re
@@ -41,7 +63,11 @@ def _clean_llm_synthesis(text: str) -> str:
     cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
     cleaned = re.sub(r"<think>.*", "", cleaned, flags=re.DOTALL | re.IGNORECASE).strip()
 
-    # 2. Match standalone report header line (never match inside bullet lists or inline mentions)
+    # 2. Reject placeholder text or ellipsis
+    if "..." in cleaned:
+        return ""
+
+    # 3. Match standalone report header line (never match inside bullet lists or inline mentions)
     header_pattern = re.compile(
         r"(?m)^(?:#{1,4}\s*)?(?:EXECUTIVE SUMMARY|BUSINESS DIAGNOSIS|EXECUTIVE BRIEFING|EXECUTIVE DIAGNOSIS)(?:\s*:|\s*[-=]{2,}|\s*$)",
         re.IGNORECASE,
@@ -52,29 +78,26 @@ def _clean_llm_synthesis(text: str) -> str:
 
     cleaned = cleaned[match.start():].strip()
 
-    # 3. Meta-commentary guardrails
-    lowered_start = cleaned[:350].lower()
-    if (
-        "thinking process" in lowered_start
-        or "analyze user input" in lowered_start
-        or "analyze request" in lowered_start
-        or "role: lead financial" in lowered_start
-        or "ground all conclusions strictly" in lowered_start
-    ):
+    # 4. Meta-commentary guardrails across the extracted text
+    lowered = cleaned.lower()
+    for phrase in FORBIDDEN_META_PHRASES_AGG:
+        if phrase in lowered:
+            return ""
+
+    # 5. Structural validation: must contain key sections
+    has_exec = bool(re.search(r"(?m)^(?:#{1,4}\s*)?(?:Executive Summary|Business Diagnosis|Executive Briefing)", cleaned, re.IGNORECASE))
+    has_breakdown = bool(re.search(r"(?m)^(?:#{1,4}\s*)?(?:Root-Cause Breakdown|Top Revenue Leaks|Revenue Leaks|Findings)", cleaned, re.IGNORECASE))
+    has_actions = bool(re.search(r"(?m)^(?:#{1,4}\s*)?(?:Prioritized Action|Recommendations|Action Plan)", cleaned, re.IGNORECASE))
+
+    if not (has_exec and has_breakdown and has_actions) or len(cleaned) < 150:
         return ""
 
-    # 4. Structural validation: must contain key sections
-    has_exec = bool(re.search(r"Executive Summary|Business Diagnosis", cleaned, re.IGNORECASE))
-    has_breakdown = bool(re.search(r"Root-Cause Breakdown|Top Revenue Leaks|Revenue Leaks|Findings", cleaned, re.IGNORECASE))
-    has_actions = bool(re.search(r"Prioritized Action|Recommendations|Action Plan", cleaned, re.IGNORECASE))
-
-    if not (has_exec and (has_breakdown or has_actions)) or len(cleaned) < 80:
+    # 6. Truncation detection: reject mid-sentence or mid-block cutoffs
+    if re.search(r"[,:;•\-\(\[\{]\s*$", cleaned):
         return ""
 
-    # 5. Truncation detection: reject mid-sentence or mid-block cutoffs
-    if re.search(r"[,\(\[\{]\s*$", cleaned):
-        return ""
-    if re.search(r"(?:P\d\s*[-—:]|\d+\.\s*)$", cleaned):
+    # Must end cleanly with terminal punctuation
+    if not re.search(r'[\.\!\"\'\)]\s*$', cleaned):
         return ""
 
     return cleaned

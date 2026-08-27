@@ -272,8 +272,12 @@ def test_recovery_agent_with_mocked_nvidia_llm(sample_evidence):
         "BUSINESS DIAGNOSIS\n------------------\n"
         "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
         "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
-        "PRIORITIZED ACTION PLAN\n[P1] Recommended P1 is dynamic UPI routing to recover INR 740,000.\n\n"
-        "EXPECTED REVENUE UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
+        "PRIORITIZED ACTIONS\n"
+        "P1 — Streamline Mobile Checkout UX\n  • Estimated Recoverable Impact: INR 2,589,659.65\n"
+        "P2 — Multi-Point Payment Reliability\n  • Estimated Recoverable Impact: INR 1,839,235.50\n"
+        "P3 — Dynamic Gateway Routing\n  • Estimated Recoverable Impact: INR 1,241,965.81\n"
+        "P4 — Return Controls for Fashion\n  • Estimated Recoverable Impact: INR 412,195.05\n\n"
+        "EXPECTED UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\nWhat-If +3.0% Success Uplift: +INR 1,839,235.50\n\n"
         "EXECUTIVE RECOMMENDATION\nExecute P1 as primary priority to recover revenue."
     )
     mock_response.content = expected_report
@@ -295,35 +299,63 @@ def test_recovery_agent_with_mocked_nvidia_llm(sample_evidence):
 
         out_state = recovery_agent_node(state)
         assert out_state["final_answer"] == expected_report
-        assert len(out_state["priority_actions"]) > 0
+        assert len(out_state["priority_actions"]) >= 4
 
 
-def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
-    """Regression test cases A through H for executive synthesis sanitization."""
-    from backend.agents.recovery_agent import _clean_llm_synthesis, recovery_agent_node
+def test_clean_llm_synthesis_cases_a_through_l(sample_evidence):
+    """Regression test cases A through L for executive synthesis sanitization and validation."""
+    from backend.agents.recovery_agent import (
+        _clean_llm_synthesis,
+        recovery_agent_node,
+        generate_deterministic_executive_report,
+    )
     from backend.agents.aggregator import _clean_llm_synthesis as clean_agg, evidence_aggregator_node
 
-    # Case A: Valid executive report -> accepted unchanged
     valid_report = (
         "BUSINESS DIAGNOSIS\n------------------\n"
         "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
-        "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
-        "PRIORITIZED ACTION PLAN\n[P1] Gateway Routing to recover INR 740,000.\n\n"
-        "EXPECTED REVENUE UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
-        "EXECUTIVE RECOMMENDATION\nExecute P1 immediately."
+        "TOP REVENUE LEAKS\n"
+        "1. Payment Method Friction: Netbanking at 21.57% failure rate.\n"
+        "2. Primary Technical Drop-off: 'USER_ABORTED' loss.\n\n"
+        "PRIORITIZED ACTIONS\n"
+        "P1 — Streamline Mobile Checkout UX with 1-Click UPI Intent & Autofill\n"
+        "  • Estimated Recoverable Impact: INR 2,589,659.65\n"
+        "  • Observed Gross Loss: INR 10,358,638.58\n"
+        "  • Confidence: 90%\n"
+        "  • Effort / Urgency: Medium Effort | High Urgency (Priority Score: 92.5/100)\n"
+        "  • Rationale: Mobile checkout friction depresses conversion.\n\n"
+        "P2 — Execute Multi-Point Payment Reliability Program\n"
+        "  • Estimated Recoverable Impact: INR 1,839,235.50\n"
+        "  • Observed Gross Loss: INR 3,488,251.64\n"
+        "  • Confidence: 92%\n"
+        "  • Effort / Urgency: Medium Effort | High Urgency (Priority Score: 81.41/100)\n"
+        "  • Rationale: Target +3% payment success uplift.\n\n"
+        "P3 — Deploy Dynamic Gateway Routing & Intelligent Auto-Retry\n"
+        "  • Estimated Recoverable Impact: INR 1,241,965.81\n"
+        "  • Observed Gross Loss: INR 3,104,914.53\n"
+        "  • Confidence: 95%\n"
+        "  • Effort / Urgency: Low Effort | High Urgency (Priority Score: 77.93/100)\n"
+        "  • Rationale: Instant fallback for timeouts.\n\n"
+        "P4 — Implement Pre-Purchase Sizing Verification for Fashion\n"
+        "  • Estimated Recoverable Impact: INR 412,195.05\n"
+        "  • Observed Gross Loss: INR 1,648,780.20\n"
+        "  • Confidence: 85%\n"
+        "  • Effort / Urgency: Medium Effort | Medium Urgency (Priority Score: 65.2/100)\n"
+        "  • Rationale: Size ambiguity reduction.\n\n"
+        "EXPECTED UPSIDE\n"
+        "Estimated Recoverable Opportunity : INR 3,488,251.64\n"
+        "What-If +3.0% Success Uplift     : +INR 1,839,235.50\n\n"
+        "EXECUTIVE RECOMMENDATION\n"
+        "Execute P1 as the primary operational priority to recover INR 2,589,659.65. Follow with P2."
     )
-    assert _clean_llm_synthesis(valid_report).startswith("BUSINESS DIAGNOSIS")
+
+    # Case A: Valid complete report -> accepted unchanged
+    res_a = _clean_llm_synthesis(valid_report)
+    assert res_a.startswith("BUSINESS DIAGNOSIS")
+    assert "P1 —" in res_a and "P4 —" in res_a
 
     # Case B: <think>...</think> + valid report -> thinking removed
-    think_with_report = (
-        "<think>Analyzing numbers and revenue impact...</think>\n\n"
-        "BUSINESS DIAGNOSIS\n"
-        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
-        "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
-        "PRIORITIZED ACTIONS\nP1 — Gateway Routing to recover INR 740,000.\n\n"
-        "EXPECTED UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
-        "EXECUTIVE RECOMMENDATION\nExecute P1 immediately."
-    )
+    think_with_report = "<think>Analyzing numbers and revenue impact...</think>\n\n" + valid_report
     res_b = _clean_llm_synthesis(think_with_report)
     assert res_b.startswith("BUSINESS DIAGNOSIS")
     assert "<think>" not in res_b
@@ -333,7 +365,7 @@ def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
         "Here's a thinking process:\n"
         "1.  **Analyze Request and Constraints:**\n"
         "    - Role: Chief Financial Intelligence Officer.\n"
-        "    - Structure: BUSINESS DIAGNOSIS, TOP REVENUE LEAKS, PRIORITIZED ACTION PLAN.\n"
+        "    - Structure: BUSINESS DIAGNOSIS, TOP REVENUE LEAKS, PRIORITIZED ACTIONS, EXPECTED UPSIDE, EXECUTIVE RECOMMENDATION.\n"
         "    - Output ONLY the briefing.\n"
         "2.  **Map Data to Required Sections:**\n"
         "    - Realized Revenue is 50M."
@@ -342,53 +374,48 @@ def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
 
     # Case D: Thinking process containing prompt rules but no actual report -> MUST return ""
     leak_case_d = (
-        "BUSINESS DIAGNOSIS, TOP REVENUE LEAKS, PRIORITIZED ACTION PLAN, EXPECTED REVENUE UPSIDE, EXECUTIVE RECOMMENDATION.\n"
-        "     - Use clear terminology: 'Estimated recoverable opportunity' (NOT guaranteed revenue).\n"
-        "     - Output ONLY the briefing. No thinking process, reasoning, preamble, filler, or meta-commentary.\n"
-        "2.  **Map Data to Required Sections:**\n"
-        "   - I think I should present: Total realized revenue: 50,092,576.66 INR."
+        "Thinking process:\n"
+        "BUSINESS DIAGNOSIS, TOP REVENUE LEAKS, PRIORITIZED ACTIONS, EXPECTED UPSIDE, EXECUTIVE RECOMMENDATION.\n"
+        "Use clear terminology: 'Estimated recoverable opportunity'.\n"
+        "I think I should present: Total realized revenue: 50,092,576.66 INR."
     )
     assert _clean_llm_synthesis(leak_case_d) == ""
 
-    # Case E: Incomplete report (missing terminal sections or cut off) -> MUST return ""
+    # Case E: Incomplete report (missing sections) -> MUST return ""
     incomplete_report = "BUSINESS DIAGNOSIS\n------------------\nShort incomplete draft without structure."
     assert _clean_llm_synthesis(incomplete_report) == ""
 
-    # Case F: Valid report with Markdown heading -> accepted
-    md_heading_report = (
-        "## BUSINESS DIAGNOSIS\n"
-        "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
-        "### TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
-        "### PRIORITIZED ACTIONS\nP1 — Dynamic Routing\n\n"
-        "### EXPECTED UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
-        "### EXECUTIVE RECOMMENDATION\nExecute P1 immediately."
+    # Case F: P1-P3 but missing P4 -> MUST return ""
+    missing_p4 = valid_report.replace(
+        "P4 — Implement Pre-Purchase Sizing Verification for Fashion\n"
+        "  • Estimated Recoverable Impact: INR 412,195.05\n"
+        "  • Observed Gross Loss: INR 1,648,780.20\n"
+        "  • Confidence: 85%\n"
+        "  • Effort / Urgency: Medium Effort | Medium Urgency (Priority Score: 65.2/100)\n"
+        "  • Rationale: Size ambiguity reduction.\n\n",
+        ""
     )
-    assert _clean_llm_synthesis(md_heading_report).startswith("## BUSINESS DIAGNOSIS")
+    assert _clean_llm_synthesis(missing_p4) == ""
 
-    # Case G: Aggregator fallback still works when LLM is invalid or returns thinking
-    mock_agg_llm = MagicMock()
-    mock_agg_llm.invoke.return_value = MagicMock(content="Here's a thinking process:\n1. Thinking only.")
-    with patch("backend.agents.aggregator.get_llm", return_value=mock_agg_llm):
-        agg_state: PayPilotState = {
-            "user_query": "Why did revenue drop?",
-            "intent": "revenue",
-            "required_agents": ["revenue_agent"],
-            "executed_agents": ["revenue_agent"],
-            "tool_results": {},
-            "evidence": sample_evidence,
-            "analysis": {},
-            "recommendations": [],
-            "final_answer": None,
-            "errors": [],
-        }
-        out_agg = evidence_aggregator_node(agg_state)
-        assert out_agg["final_answer"] is not None
-        assert "thinking process" not in out_agg["final_answer"].lower()
-        assert len(out_agg["recommendations"]) > 0
+    # Case G: Valid report followed by "Let's compute..." -> MUST return ""
+    followed_by_compute = valid_report + "\n\nLet's compute numbers with proper formatting."
+    assert _clean_llm_synthesis(followed_by_compute) == ""
 
-    # Case H: Recovery fallback still works when LLM output is invalid or returns thinking
+    # Case H: Valid report followed by calculations/meta text -> MUST return ""
+    followed_by_meta = valid_report + "\n\nNow let's check all the revenue leaks:"
+    assert _clean_llm_synthesis(followed_by_meta) == ""
+
+    # Case I: Report ending with "..." -> MUST return ""
+    ending_dots = valid_report + "..."
+    assert _clean_llm_synthesis(ending_dots) == ""
+
+    # Case J: Report ending mid-sentence -> MUST return ""
+    mid_sentence = valid_report[:-1]  # remove terminal period
+    assert _clean_llm_synthesis(mid_sentence) == ""
+
+    # Case K: Deterministic fallback returns complete P1-P4 report
     mock_rec_llm = MagicMock()
-    mock_rec_llm.invoke.return_value = MagicMock(content=leak_case_d)
+    mock_rec_llm.invoke.return_value = MagicMock(content=followed_by_compute)
     with patch("backend.agents.recovery_agent.get_llm", return_value=mock_rec_llm):
         rec_state: PayPilotState = {
             "user_query": "Why did revenue drop?",
@@ -403,7 +430,18 @@ def test_clean_llm_synthesis_cases_a_through_h(sample_evidence):
             "errors": [],
         }
         out_rec = recovery_agent_node(rec_state)
-        assert "BUSINESS DIAGNOSIS" in out_rec["final_answer"]
-        assert "thinking process" not in out_rec["final_answer"].lower()
-        assert len(out_rec["priority_actions"]) > 0
+        ans = out_rec["final_answer"]
+        assert ans.startswith("BUSINESS DIAGNOSIS")
+        assert "TOP REVENUE LEAKS" in ans
+        assert "PRIORITIZED ACTIONS" in ans
+        assert "EXPECTED UPSIDE" in ans
+        assert "EXECUTIVE RECOMMENDATION" in ans
+        assert "P1 —" in ans and "P2 —" in ans and "P3 —" in ans and "P4 —" in ans
+        assert "Let's compute" not in ans
 
+    # Case L: Financial terminology validation in deterministic report
+    det_out = generate_deterministic_executive_report("Why revenue down?", sample_evidence, out_rec["priority_actions"])
+    det_ans = det_out["final_answer"]
+    assert "Estimated Recoverable Opportunity" in det_ans
+    assert "What-If +3.0% Success Uplift" in det_ans
+    assert "Realized Revenue" in det_ans

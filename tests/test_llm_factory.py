@@ -104,7 +104,10 @@ def test_evidence_aggregator_with_mocked_llm():
         "Executive Summary:\n"
         "Total Revenue: INR 2,000,000.00. Payment Success Rate dropped to 74.2%.\n\n"
         "Root-Cause Breakdown:\n"
-        "UPI timeouts on mobile devices caused INR 500,000.00 in failed transactions."
+        "UPI timeouts on mobile devices caused INR 500,000.00 in failed transactions.\n\n"
+        "Prioritized Action Plan:\n"
+        "1. Deploy dynamic retry logic for UPI timeouts.\n"
+        "2. Optimize mobile checkout form flow."
     )
     mock_response.content = expected_synthesis
     mock_llm.invoke.return_value = mock_response

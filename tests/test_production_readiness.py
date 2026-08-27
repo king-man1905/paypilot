@@ -128,14 +128,19 @@ def test_sanitization_rejects_think_blocks_and_reasoning():
         "BUSINESS DIAGNOSIS\n------------------\n"
         "Realized Revenue: INR 50,092,576.66\nOverall Payment Success Rate: 81.71%\nObserved Failed Volume: INR 12,654,909.17\n\n"
         "TOP REVENUE LEAKS\n1. Netbanking failure at 21.57%\n\n"
-        "PRIORITIZED ACTIONS\nP1 — Gateway Routing to recover INR 740,000.\n\n"
-        "EXPECTED UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\n\n"
+        "PRIORITIZED ACTIONS\n"
+        "P1 — Streamline Mobile Checkout UX\n  • Estimated Recoverable Impact: INR 2,589,659.65\n"
+        "P2 — Multi-Point Payment Reliability\n  • Estimated Recoverable Impact: INR 1,839,235.50\n"
+        "P3 — Dynamic Gateway Routing\n  • Estimated Recoverable Impact: INR 1,241,965.81\n"
+        "P4 — Return Controls for Fashion\n  • Estimated Recoverable Impact: INR 412,195.05\n\n"
+        "EXPECTED UPSIDE\nEstimated Recoverable Opportunity: INR 3,488,251.64\nWhat-If +3.0% Success Uplift: +INR 1,839,235.50\n\n"
         "EXECUTIVE RECOMMENDATION\nExecute P1 as priority."
     )
     cleaned = clean_rec(input_with_think)
     assert cleaned.startswith("BUSINESS DIAGNOSIS")
     assert "<think>" not in cleaned
     assert "Need to examine" not in cleaned
+    assert "P4 —" in cleaned
 
     # Pure thinking without structured report
     pure_thinking = "Here is my thinking process:\n1. Analyze user request\n2. Compute numbers."

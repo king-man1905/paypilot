@@ -20,7 +20,7 @@ import { useCurrency, CURRENCY_CONFIGS } from '../context/CurrencyContext';
 import { useAuth } from '../context/AuthContext';
 import { CurrencyCode } from '../types/api';
 import { ConfigDiagnosticsSchema } from '../types/api';
-import { apiClient } from '../api/client';
+import { apiClient, BASE_URL } from '../api/client';
 
 export const SettingsPage: React.FC = () => {
   const { currency, setCurrency } = useCurrency();
@@ -306,11 +306,17 @@ export const SettingsPage: React.FC = () => {
           <LoadingSkeleton rows={2} />
         ) : configData ? (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs pt-1">
               <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                 <span className="text-slate-400 block font-medium">Environment</span>
                 <span className="font-bold text-slate-900 font-mono uppercase">
                   {configData.environment}
+                </span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span className="text-slate-400 block font-medium">Backend Endpoint</span>
+                <span className="font-bold text-slate-900 font-mono truncate block" title={BASE_URL || 'Relative / Local Proxy'}>
+                  {BASE_URL || 'Local Proxy'}
                 </span>
               </div>
               <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">

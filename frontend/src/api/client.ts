@@ -21,12 +21,13 @@ import {
   MOCK_SLO_STATUS,
 } from './mockData';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const rawBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || '';
+export const BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 class PayPilotApiClient {
   private getHeaders(customHeaders?: Record<string, string>): HeadersInit {
-    const apiKey = localStorage.getItem('paypilot_api_key') || 'paypilot-prod-analyst-key';
-    const clientId = localStorage.getItem('paypilot_client_id') || 'merchant_enterprise_01';
+    const apiKey = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_api_key')) || 'paypilot-prod-analyst-key';
+    const clientId = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_client_id')) || 'merchant_enterprise_01';
 
     return {
       'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ class PayPilotApiClient {
         status: 'healthy',
         service: 'paypilot',
         llm_provider: 'nvidia',
-        model: 'meta/llama-3.3-70b-instruct',
+        model: 'nvidia/nemotron-3-super-120b-a12b',
         is_live_llm: false,
         timestamp: new Date().toISOString(),
       };
@@ -82,7 +83,7 @@ class PayPilotApiClient {
         details: {
           total_transactions_loaded: 15000,
           active_llm_provider: 'nvidia',
-          model: 'meta/llama-3.3-70b-instruct',
+          model: 'nvidia/nemotron-3-super-120b-a12b',
           is_live_llm: false,
           runner_state: 'RUNNING',
         },

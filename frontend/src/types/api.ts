@@ -86,6 +86,7 @@ export interface AnalyzeResponse {
   llm_provider: string;
   model: string;
   is_live_llm: boolean;
+  node_models?: Record<string, string> | null;
   execution_metadata: ExecutionMetadata;
 }
 

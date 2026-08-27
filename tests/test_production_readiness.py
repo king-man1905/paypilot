@@ -281,6 +281,7 @@ def test_llm_generate_span_contains_node_metadata(monkeypatch):
 
     with patch("langchain_nvidia_ai_endpoints.ChatNVIDIA", return_value=mock_raw):
         s_llm = get_llm(node_type="supervisor")
+        assert s_llm is not None
         s_llm.invoke("Test input")
 
         spans = store.list_traces()

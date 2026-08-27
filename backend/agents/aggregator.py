@@ -190,7 +190,7 @@ def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
                         HumanMessage(content=prompt_content),
                     ])
 
-                res = execute_with_retry(_call_synthesis, on_retry=lambda att, exc, d: record_retry())
+                res = execute_with_retry(_call_synthesis, max_retries=0, on_retry=lambda att, exc, d: record_retry())
                 lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
                 text_answer = getattr(res, "content", str(res)).strip()
                 if text_answer:

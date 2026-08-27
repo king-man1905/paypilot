@@ -218,7 +218,7 @@ def test_nvidia_live_provider_metadata_when_configured(monkeypatch):
 
     info = get_llm_info()
     assert info["active_provider"] == "nvidia"
-    assert info["active_model"] in ["nvidia/nemotron-3.5-lightning-30b-a3b", "meta/llama-3.3-70b-instruct"]
+    assert info["active_model"] in ["nvidia/nemotron-3-super-120b-a12b", "nvidia/nemotron-3.5-lightning-30b-a3b", "meta/llama-3.3-70b-instruct"]
     assert info["is_live_llm"] is True
     assert info["is_llm_active"] is True
     assert info["nvidia_key_present"] is True

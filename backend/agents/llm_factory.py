@@ -13,6 +13,9 @@ from backend.config import (
     LLM_PROVIDER,
     NVIDIA_API_KEY,
     NVIDIA_MODEL,
+    SUPERVISOR_MODEL,
+    AGGREGATOR_MODEL,
+    RECOVERY_MODEL,
     NVIDIA_BASE_URL,
     LLM_REQUEST_TIMEOUT,
 )
@@ -74,15 +77,19 @@ def _wrap_traced_llm(raw_llm: BaseChatModel, provider: str, model: str) -> BaseC
 
 def get_llm(
     model: Optional[str] = None,
+    node_type: Optional[str] = None,
     temperature: float = 0.0,
+    max_tokens: Optional[int] = 1024,
     api_key: Optional[str] = None,
     provider: Optional[str] = None,
 ) -> Optional[BaseChatModel]:
     """Returns an initialized LangChain ChatModel connected to the NVIDIA API.
 
     Args:
-        model: Optional model name override (defaults to NVIDIA_MODEL).
+        model: Optional explicit model name override.
+        node_type: Optional agent node identifier ('supervisor', 'aggregator', 'recovery').
         temperature: Sampling temperature (0.0 for deterministic analysis).
+        max_tokens: Maximum completion tokens (default 1024 for full executive reports).
         api_key: Optional explicit API key override.
         provider: Kept for backwards compatibility (supports 'nvidia' or None).
 
@@ -103,9 +110,20 @@ def get_llm(
         logger.info("No valid NVIDIA_API_KEY configured. Operating in deterministic fallback mode.")
         return None
 
-    target_model = (model or os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "nvidia/nemotron-3.5-lightning-30b-a3b")).strip()
+    if model:
+        target_model = model.strip()
+    elif node_type == "supervisor":
+        target_model = (os.getenv("SUPERVISOR_MODEL", SUPERVISOR_MODEL or "nvidia/nemotron-3-nano-30b-a3b")).strip()
+    elif node_type == "aggregator":
+        target_model = (os.getenv("AGGREGATOR_MODEL", AGGREGATOR_MODEL or "nvidia/nemotron-3-super-120b-a12b")).strip()
+    elif node_type == "recovery":
+        target_model = (os.getenv("RECOVERY_MODEL", RECOVERY_MODEL or "nvidia/nemotron-3-super-120b-a12b")).strip()
+    else:
+        target_model = (os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "nvidia/nemotron-3-super-120b-a12b")).strip()
+
     base_url = (os.getenv("NVIDIA_BASE_URL", NVIDIA_BASE_URL or "https://integrate.api.nvidia.com/v1")).strip()
     timeout_sec = float(os.getenv("LLM_REQUEST_TIMEOUT", LLM_REQUEST_TIMEOUT))
+    tokens_limit = max_tokens or 1024
 
     # Preferred implementation: ChatNVIDIA from langchain_nvidia_ai_endpoints
     try:
@@ -116,6 +134,7 @@ def get_llm(
             base_url=base_url,
             temperature=temperature,
             timeout=timeout_sec,
+            max_tokens=tokens_limit,
         )
         logger.info(f"Initialized ChatNVIDIA with model '{target_model}'.")
         return _wrap_traced_llm(raw_llm, provider="nvidia", model=target_model)
@@ -129,6 +148,7 @@ def get_llm(
                 base_url=base_url,
                 temperature=temperature,
                 timeout=timeout_sec,
+                max_tokens=tokens_limit,
                 max_retries=1,
             )
             logger.info(f"Initialized ChatOpenAI with NVIDIA endpoint and model '{target_model}'.")
@@ -150,7 +170,7 @@ def get_llm_info() -> Dict[str, Any]:
     active_llm = get_llm(temperature=0.0)
 
     provider_name = "nvidia" if active_llm is not None else "deterministic_fallback"
-    model_name = os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "nvidia/nemotron-3.5-lightning-30b-a3b") if active_llm is not None else "none"
+    model_name = os.getenv("NVIDIA_MODEL", NVIDIA_MODEL or "nvidia/nemotron-3-super-120b-a12b") if active_llm is not None else "none"
 
     if active_llm is not None:
         status_reason = "NVIDIA Live LLM active"
@@ -165,6 +185,9 @@ def get_llm_info() -> Dict[str, Any]:
         "configured_provider": "nvidia",
         "model": model_name,
         "active_model": model_name,
+        "supervisor_model": os.getenv("SUPERVISOR_MODEL", SUPERVISOR_MODEL or "nvidia/nemotron-3-nano-30b-a3b"),
+        "aggregator_model": os.getenv("AGGREGATOR_MODEL", AGGREGATOR_MODEL or "nvidia/nemotron-3-super-120b-a12b"),
+        "recovery_model": os.getenv("RECOVERY_MODEL", RECOVERY_MODEL or "nvidia/nemotron-3-super-120b-a12b"),
         "is_llm_active": active_llm is not None,
         "is_live_llm": active_llm is not None,
         "nvidia_key_present": has_nvidia,

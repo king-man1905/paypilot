@@ -110,15 +110,37 @@ def _rule_based_routing(query: str) -> SupervisorDecision:
 def _parse_llm_json_response(raw_text: str) -> Optional[SupervisorDecision]:
     """Stage 2: Extracts and parses JSON from raw NVIDIA LLM text if structured output fails."""
     try:
-        json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
-        if json_match:
-            data = json.loads(json_match.group(0))
+        clean_text = raw_text.strip()
+        if "```json" in clean_text:
+            clean_text = re.sub(r"```json\s*", "", clean_text)
+            clean_text = re.sub(r"```\s*$", "", clean_text).strip()
+        elif "```" in clean_text:
+            clean_text = re.sub(r"```\s*", "", clean_text).strip()
+
+        try:
+            data = json.loads(clean_text)
             if "intent" in data and "required_agents" in data:
                 return SupervisorDecision(
                     intent=str(data["intent"]),
                     required_agents=list(data["required_agents"]),
                     reasoning=str(data.get("reasoning", "NVIDIA LLM JSON parsed routing")),
                 )
+        except Exception:
+            pass
+
+        for pattern in [r"\{[^{}]*\}", r"\{.*\}"]:
+            json_match = re.search(pattern, clean_text, re.DOTALL)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(0))
+                    if "intent" in data and "required_agents" in data:
+                        return SupervisorDecision(
+                            intent=str(data["intent"]),
+                            required_agents=list(data["required_agents"]),
+                            reasoning=str(data.get("reasoning", "NVIDIA LLM JSON parsed routing")),
+                        )
+                except Exception:
+                    continue
     except Exception:
         pass
     return None
@@ -140,7 +162,7 @@ def supervisor_node(state: PayPilotState) -> PayPilotState:
         state["required_agents"] = []
         return state
 
-    llm = get_llm(temperature=0.0)
+    llm = get_llm(node_type="supervisor", temperature=0.0)
     decision: Optional[SupervisorDecision] = None
 
 

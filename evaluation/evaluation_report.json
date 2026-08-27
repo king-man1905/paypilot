@@ -1,7 +1,7 @@
 {
   "benchmark_name": "PayPilot Comprehensive Multi-Agent Evaluation Benchmark",
   "version": "2.0.0",
-  "timestamp": "2026-08-25T14:19:08Z",
+  "timestamp": "2026-08-27T12:33:22Z",
   "dataset_size": 32,
   "metrics": {
     "routing_accuracy_pct": 100.0,
@@ -13,8 +13,8 @@
     "numerical_consistency_pct": 100.0,
     "recommendation_correctness_pct": 100.0,
     "response_completeness_pct": 100.0,
-    "avg_latency_ms": 110.57,
-    "p95_latency_ms": 193.84,
+    "avg_latency_ms": 101.54,
+    "p95_latency_ms": 214.58,
     "overall_pass_rate_pct": 100.0
   },
   "llm_provider": "MOCK/OFFLINE",

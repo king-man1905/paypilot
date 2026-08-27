@@ -570,7 +570,7 @@ def recovery_agent_node(state: PayPilotState) -> PayPilotState:
         )
         from backend.utils.resilience import execute_with_retry, nvidia_circuit_breaker
 
-        llm = get_llm(temperature=0.2)
+        llm = get_llm(node_type="recovery", temperature=0.2)
         synthesis_done = False
 
         if llm is not None and prioritized:

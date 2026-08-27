@@ -106,9 +106,11 @@ class MockChatNVIDIA(SimpleChatModel):
 
 def get_mock_llm(
     model: Optional[str] = None,
+    node_type: Optional[str] = None,
     temperature: float = 0.0,
     api_key: Optional[str] = None,
     provider: Optional[str] = None,
+    **kwargs: Any,
 ) -> MockChatNVIDIA:
     """Returns an offline deterministic MockChatNVIDIA instance."""
     return MockChatNVIDIA(temperature=temperature)

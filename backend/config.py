@@ -213,7 +213,10 @@ class PayPilotSettings:
     # LLM & Inference Engine
     llm_provider: str = "nvidia"
     nvidia_api_key: str = ""
-    nvidia_model: str = "nvidia/nemotron-3.5-lightning-30b-a3b"
+    nvidia_model: str = "nvidia/nemotron-3-super-120b-a12b"
+    supervisor_model: str = "nvidia/nemotron-3-nano-30b-a3b"
+    aggregator_model: str = "nvidia/nemotron-3-super-120b-a12b"
+    recovery_model: str = "nvidia/nemotron-3-super-120b-a12b"
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
     llm_request_timeout: float = 60.0
 
@@ -332,7 +335,10 @@ class PayPilotSettings:
             data_seed=int(os.getenv("DATA_SEED", "42")),
             llm_provider=os.getenv("LLM_PROVIDER", "nvidia").strip().lower(),
             nvidia_api_key=nv_key,
-            nvidia_model=os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b").strip(),
+            nvidia_model=os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip(),
+            supervisor_model=os.getenv("SUPERVISOR_MODEL", "nvidia/nemotron-3-nano-30b-a3b").strip(),
+            aggregator_model=os.getenv("AGGREGATOR_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip(),
+            recovery_model=os.getenv("RECOVERY_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip(),
             nvidia_base_url=os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip(),
             llm_request_timeout=float(os.getenv("LLM_REQUEST_TIMEOUT", "60.0")),
             llm_max_retries=int(os.getenv("LLM_MAX_RETRIES", "1")),
@@ -626,6 +632,9 @@ def safe_config_snapshot(settings: Optional[PayPilotSettings] = None) -> Dict[st
         "llm": {
             "provider": s.llm_provider,
             "model": s.nvidia_model,
+            "supervisor_model": s.supervisor_model,
+            "aggregator_model": s.aggregator_model,
+            "recovery_model": s.recovery_model,
             "base_url": s.nvidia_base_url,
             "timeout_seconds": s.llm_request_timeout,
             "max_retries": s.llm_max_retries,
@@ -735,7 +744,10 @@ def validate_startup_config(settings: Optional[PayPilotSettings] = None) -> None
 DATA_PATH = ROOT_DIR / os.getenv("DATA_PATH", "data/processed/merchant_transactions.csv")
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "nvidia").strip().lower()
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "").strip()
-NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b").strip()
+NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
+SUPERVISOR_MODEL = os.getenv("SUPERVISOR_MODEL", "nvidia/nemotron-3-nano-30b-a3b").strip()
+AGGREGATOR_MODEL = os.getenv("AGGREGATOR_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
+RECOVERY_MODEL = os.getenv("RECOVERY_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip()
 FASTAPI_HOST = os.getenv("FASTAPI_HOST", "0.0.0.0")
 FASTAPI_PORT = int(os.getenv("FASTAPI_PORT", 8000))
@@ -937,6 +949,18 @@ def get_shutdown_timeout_seconds() -> float:
     return get_settings().shutdown_timeout_seconds
 
 
+def get_supervisor_model() -> str:
+    return get_settings().supervisor_model
+
+
+def get_aggregator_model() -> str:
+    return get_settings().aggregator_model
+
+
+def get_recovery_model() -> str:
+    return get_settings().recovery_model
+
+
 def validate_config() -> dict:
     """Validates configuration parameters without leaking secret values."""
     status = {
@@ -946,6 +970,9 @@ def validate_config() -> dict:
         "database_configured": bool(get_database_url()),
         "llm_provider": LLM_PROVIDER,
         "model": NVIDIA_MODEL,
+        "supervisor_model": get_supervisor_model(),
+        "aggregator_model": get_aggregator_model(),
+        "recovery_model": get_recovery_model(),
         "has_api_key": bool(os.getenv("NVIDIA_API_KEY", "").strip()),
         "request_timeout_sec": LLM_REQUEST_TIMEOUT,
         "max_query_length": MAX_QUERY_LENGTH,

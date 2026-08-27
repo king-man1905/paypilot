@@ -3,6 +3,7 @@
 *.env
 .env.*
 !.env.example
+!.env.production
 
 # Python & Testing Caches
 __pycache__/

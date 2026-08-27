@@ -347,7 +347,7 @@ class PayPilotSettings:
             circuit_breaker_failure_threshold=int(os.getenv("CIRCUIT_BREAKER_FAILURE_THRESHOLD", "3")),
             circuit_breaker_recovery_time=float(os.getenv("CIRCUIT_BREAKER_RECOVERY_TIME", "30.0")),
             fastapi_host=os.getenv("FASTAPI_HOST", "0.0.0.0").strip(),
-            fastapi_port=int(os.getenv("FASTAPI_PORT", "8000")),
+            fastapi_port=int(os.getenv("PORT", os.getenv("FASTAPI_PORT", "8000"))),
             backend_url=os.getenv("BACKEND_URL", "http://localhost:8000").strip(),
             max_query_length=int(os.getenv("MAX_QUERY_LENGTH", "1000")),
             max_concurrent_requests=int(os.getenv("MAX_CONCURRENT_REQUESTS", "10")),
@@ -750,7 +750,7 @@ AGGREGATOR_MODEL = os.getenv("AGGREGATOR_MODEL", "nvidia/nemotron-3-super-120b-a
 RECOVERY_MODEL = os.getenv("RECOVERY_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip()
 FASTAPI_HOST = os.getenv("FASTAPI_HOST", "0.0.0.0")
-FASTAPI_PORT = int(os.getenv("FASTAPI_PORT", 8000))
+FASTAPI_PORT = int(os.getenv("PORT", os.getenv("FASTAPI_PORT", 8000)))
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 MAX_QUERY_LENGTH = int(os.getenv("MAX_QUERY_LENGTH", 1000))
 MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", 10))

@@ -1,0 +1,203 @@
+{
+  "timestamp": "2026-08-28T15:54:41Z",
+  "tools": {
+    "get_business_health_summary": {
+      "mean_ms": 30.277,
+      "min_ms": 21.191,
+      "max_ms": 54.488
+    },
+    "get_revenue_trend (Weekly)": {
+      "mean_ms": 63.989,
+      "min_ms": 50.494,
+      "max_ms": 78.168
+    },
+    "get_revenue_trend (Monthly)": {
+      "mean_ms": 32.453,
+      "min_ms": 24.863,
+      "max_ms": 44.098
+    },
+    "get_revenue_lost_by_failure": {
+      "mean_ms": 4.374,
+      "min_ms": 3.008,
+      "max_ms": 6.355
+    },
+    "get_what_if_success_rate (+3%)": {
+      "mean_ms": 11.335,
+      "min_ms": 7.764,
+      "max_ms": 16.489
+    },
+    "get_payment_success_rate": {
+      "mean_ms": 1.399,
+      "min_ms": 1.234,
+      "max_ms": 1.596
+    },
+    "get_payment_failure_rate": {
+      "mean_ms": 0.763,
+      "min_ms": 0.564,
+      "max_ms": 1.117
+    },
+    "get_revenue_by_payment_method": {
+      "mean_ms": 17.578,
+      "min_ms": 13.589,
+      "max_ms": 21.493
+    },
+    "get_failure_rate_by_payment_method": {
+      "mean_ms": 6.345,
+      "min_ms": 5.136,
+      "max_ms": 8.66
+    },
+    "get_failure_reasons (top 5)": {
+      "mean_ms": 5.106,
+      "min_ms": 3.699,
+      "max_ms": 7.549
+    },
+    "get_failed_payment_value": {
+      "mean_ms": 2.03,
+      "min_ms": 1.387,
+      "max_ms": 2.591
+    },
+    "get_conversion_by_device": {
+      "mean_ms": 31.637,
+      "min_ms": 24.196,
+      "max_ms": 37.956
+    },
+    "get_top_revenue_leaks (top 5)": {
+      "mean_ms": 9.671,
+      "min_ms": 7.175,
+      "max_ms": 12.15
+    },
+    "get_conversion_by_customer_type": {
+      "mean_ms": 15.721,
+      "min_ms": 12.173,
+      "max_ms": 19.447
+    },
+    "get_category_performance": {
+      "mean_ms": 16.434,
+      "min_ms": 12.513,
+      "max_ms": 20.145
+    },
+    "get_refund_rate": {
+      "mean_ms": 4.976,
+      "min_ms": 3.714,
+      "max_ms": 6.665
+    }
+  },
+  "specialist_nodes": {
+    "revenue_agent": {
+      "mean_ms": 139.004,
+      "min_ms": 119.448,
+      "max_ms": 168.18
+    },
+    "payment_agent": {
+      "mean_ms": 57.32,
+      "min_ms": 43.132,
+      "max_ms": 112.52
+    },
+    "checkout_agent": {
+      "mean_ms": 47.214,
+      "min_ms": 34.707,
+      "max_ms": 62.696
+    },
+    "customer_agent": {
+      "mean_ms": 49.147,
+      "min_ms": 36.212,
+      "max_ms": 61.016
+    }
+  },
+  "total_specialists_ms": 292.685,
+  "live_llm": {
+    "supervisor_llm": {
+      "status": "success",
+      "latency_ms": 4647.72,
+      "model": "nvidia/nemotron-3-nano-30b-a3b",
+      "output_length_chars": 1088,
+      "prompt_length_chars": 2129,
+      "prompt_est_tokens": 532
+    },
+    "aggregator_llm": {
+      "status": "success",
+      "latency_ms": 29213.45,
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "output_length_chars": 2368,
+      "prompt_length_chars": 12928,
+      "prompt_est_tokens": 3232
+    },
+    "recovery_llm": {
+      "status": "failed",
+      "error": "[503] {'message': 'Service temporarily overloaded', 'type': 'Service Unavailable', 'code': 503}\n{'error': {'message': 'Service temporarily overloaded', 'type': 'Service Unavailable', 'code': 503}, 'status': 503}"
+    }
+  },
+  "total_live_llm_ms": 33861.17,
+  "concurrent_benchmarks": {
+    "concurrency_1": {
+      "count": 1,
+      "total_wall_time_sec": 0.272,
+      "throughput_req_sec": 3.68,
+      "mean_ms": 270.9,
+      "median_ms": 270.9,
+      "p95_ms": 270.9,
+      "p99_ms": 270.9,
+      "min_ms": 270.9,
+      "max_ms": 270.9,
+      "successful": 1,
+      "failed": 0,
+      "concurrency_level": 1
+    },
+    "concurrency_5": {
+      "count": 5,
+      "total_wall_time_sec": 0.763,
+      "throughput_req_sec": 6.55,
+      "mean_ms": 655.59,
+      "median_ms": 622.96,
+      "p95_ms": 763.0,
+      "p99_ms": 763.0,
+      "min_ms": 588.77,
+      "max_ms": 763.0,
+      "successful": 5,
+      "failed": 0,
+      "concurrency_level": 5
+    },
+    "concurrency_10": {
+      "count": 10,
+      "total_wall_time_sec": 1.847,
+      "throughput_req_sec": 5.41,
+      "mean_ms": 1398.61,
+      "median_ms": 1232.45,
+      "p95_ms": 1845.74,
+      "p99_ms": 1845.74,
+      "min_ms": 1098.57,
+      "max_ms": 1845.74,
+      "successful": 10,
+      "failed": 0,
+      "concurrency_level": 10
+    },
+    "concurrency_25": {
+      "count": 25,
+      "total_wall_time_sec": 4.546,
+      "throughput_req_sec": 5.5,
+      "mean_ms": 2813.54,
+      "median_ms": 2872.75,
+      "p95_ms": 4533.79,
+      "p99_ms": 4539.93,
+      "min_ms": 1030.44,
+      "max_ms": 4539.93,
+      "successful": 25,
+      "failed": 0,
+      "concurrency_level": 25
+    },
+    "concurrency_50": {
+      "count": 50,
+      "total_wall_time_sec": 3.635,
+      "throughput_req_sec": 13.75,
+      "mean_ms": 2598.15,
+      "median_ms": 2754.16,
+      "p95_ms": 3339.19,
+      "p99_ms": 3631.69,
+      "min_ms": 821.86,
+      "max_ms": 3631.69,
+      "successful": 19,
+      "failed": 31,
+      "concurrency_level": 50
+    }
+  }
+}

@@ -264,13 +264,20 @@ def get_conversion_by_device(df: Optional[pd.DataFrame] = None) -> Dict[str, Dic
         return {}
 
     results = {}
-    for device, group in data.groupby("device_type"):
+    for device, group in data.groupby("device_type", observed=False):
         total = len(group)
-        success = len(group[group["payment_status"] == "SUCCESS"])
-        failed = len(group[group["payment_status"] == "FAILED"])
-        dropped = len(group[group["payment_status"] == "DROPPED"])
-        revenue = round(float(group[group["payment_status"] == "SUCCESS"]["amount"].sum()), 2)
-        lost_val = round(float(group[group["payment_status"].isin(["FAILED", "DROPPED"])]["amount"].sum()), 2)
+        status_col = group["payment_status"]
+        success_mask = status_col == "SUCCESS"
+        failed_mask = status_col == "FAILED"
+        dropped_mask = status_col == "DROPPED"
+
+        success = int(success_mask.sum())
+        failed = int(failed_mask.sum())
+        dropped = int(dropped_mask.sum())
+
+        amount_col = group["amount"]
+        revenue = round(float(amount_col[success_mask].sum()), 2)
+        lost_val = round(float(amount_col[failed_mask | dropped_mask].sum()), 2)
 
         results[str(device)] = {
             "total_attempts": total,
@@ -292,7 +299,7 @@ def get_conversion_by_customer_type(df: Optional[pd.DataFrame] = None) -> Dict[s
         return {}
 
     results = {}
-    for ctype, group in data.groupby("customer_type"):
+    for ctype, group in data.groupby("customer_type", observed=False):
         total = len(group)
         successful = group[group["payment_status"] == "SUCCESS"]
         revenue = round(float(successful["amount"].sum()), 2)
@@ -317,7 +324,7 @@ def get_category_performance(df: Optional[pd.DataFrame] = None) -> Dict[str, Dic
         return {}
 
     results = {}
-    for cat, group in data.groupby("product_category"):
+    for cat, group in data.groupby("product_category", observed=False):
         total = len(group)
         successful = group[group["payment_status"] == "SUCCESS"]
         refunded = successful[successful["refund_status"] != "NO_REFUND"]
@@ -353,24 +360,27 @@ def get_revenue_trend(
     Returns:
         List of periodic time-bucket metrics.
     """
-    data = _get_df(df).copy()
+    data = _get_df(df)
     if data.empty:
         return []
 
-    data["period"] = data["timestamp"].dt.to_period(frequency).astype(str)
+    periods = data["timestamp"].dt.to_period(frequency).astype(str)
     trend = []
 
-    for period_label, group in data.groupby("period"):
+    for period_label, group in data.groupby(periods, observed=False):
         total = len(group)
-        successful = group[group["payment_status"] == "SUCCESS"]
-        failed = group[group["payment_status"].isin(["FAILED", "DROPPED"])]
+        status_col = group["payment_status"]
+        success_mask = status_col == "SUCCESS"
+        failed_mask = status_col.isin(["FAILED", "DROPPED"])
+        successful = group[success_mask]
+        amount_col = group["amount"]
         
-        revenue = round(float(successful["amount"].sum()), 2)
-        failed_val = round(float(failed["amount"].sum()), 2)
+        revenue = round(float(amount_col[success_mask].sum()), 2)
+        failed_val = round(float(amount_col[failed_mask].sum()), 2)
         s_rate = round(float((len(successful) / total) * 100), 2) if total > 0 else 0.0
 
         trend.append({
-            "period": period_label,
+            "period": str(period_label),
             "total_attempts": total,
             "successful_orders": len(successful),
             "realized_revenue": revenue,

@@ -24,8 +24,8 @@ import {
 const DEFAULT_PROD_API_URL = 'https://paypilot-pjye.onrender.com';
 
 const getBaseUrl = (): string => {
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL?.trim()) {
+    return import.meta.env.VITE_API_BASE_URL.trim();
   }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
@@ -140,9 +140,14 @@ class PayPilotApiClient {
   }
 
   /**
-   * Submit Asynchronous Background Analysis Job
+   * Submit Asynchronous Background Analysis / Deployment Job
    */
-  async submitJob(query: string, idempotencyKey?: string): Promise<JobResponse> {
+  async submitJob(
+    query: string,
+    idempotencyKey?: string,
+    taskType: string = 'async_analysis',
+    metadata?: Record<string, any>
+  ): Promise<JobResponse> {
     const customHeaders: Record<string, string> = {};
     if (idempotencyKey) {
       customHeaders['Idempotency-Key'] = idempotencyKey;
@@ -154,7 +159,8 @@ class PayPilotApiClient {
         headers: this.getHeaders(customHeaders),
         body: JSON.stringify({
           query: query.trim(),
-          task_type: 'async_analysis',
+          task_type: taskType,
+          ...(metadata ? { metadata } : {}),
         }),
       });
 
@@ -168,8 +174,8 @@ class PayPilotApiClient {
       console.warn('Backend /api/v1/jobs unavailable, creating local simulated job:', err);
       const newJob: JobResponse = {
         job_id: `job_${Math.random().toString(16).substring(2, 14)}`,
-        task_type: 'async_analysis',
-        client_id: localStorage.getItem('paypilot_client_id') || 'merchant_enterprise_01',
+        task_type: taskType,
+        client_id: (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_client_id')) || 'merchant_enterprise_01',
         role: 'analyst',
         status: 'completed',
         created_at: new Date().toISOString(),

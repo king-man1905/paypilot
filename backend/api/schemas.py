@@ -262,3 +262,55 @@ class ConfigDiagnosticsSchema(BaseModel):
     snapshot: Dict[str, Any] = Field(description="Redacted non-secret configuration snapshot")
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
+
+class DeployRecommendationRequest(BaseModel):
+    """Payload for deploying an automated revenue recovery recommendation."""
+    action_rank: int = Field(
+        ...,
+        ge=1,
+        le=20,
+        description="Rank/Priority number of the recommendation (e.g. 1 for P1)",
+        examples=[1],
+    )
+    action_title: str = Field(
+        ...,
+        min_length=3,
+        max_length=300,
+        description="Descriptive title of the recommendation action",
+        examples=["Implement Dynamic Multi-Gateway Failover Routing for UPI"],
+    )
+    affected_area: Optional[str] = Field(
+        default=None,
+        max_length=200,
+        description="Target business domain or subsystem",
+        examples=["Payment Processing & Gateways"],
+    )
+    estimated_revenue_impact_inr: Optional[float] = Field(
+        default=0.0,
+        ge=0.0,
+        description="Projected recoverable revenue in INR",
+        examples=[4820000.0],
+    )
+    parameters: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Optional execution parameters or rollout flags",
+    )
+
+
+class DeployRecommendationResponse(BaseModel):
+    """Structured response detailing enqueued recommendation deployment rollout."""
+    deployment_id: str = Field(description="Unique deployment operation identifier")
+    job_id: str = Field(description="Background execution job identifier")
+    action_rank: int = Field(description="Target recommendation priority rank")
+    action_title: str = Field(description="Target action title")
+    status: str = Field(description="Deployment status (enqueued, running, completed)")
+    enqueued_at: str = Field(description="UTC deployment dispatch timestamp")
+    client_id: str = Field(description="Owner tenant identifier")
+    role: str = Field(description="Owner role")
+    estimated_revenue_impact_inr: float = Field(description="Projected recoverable revenue in INR")
+    message: str = Field(description="User-facing status confirmation")
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        description="UTC response generation timestamp",
+    )
+

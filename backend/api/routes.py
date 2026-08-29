@@ -18,6 +18,8 @@ from backend.api.schemas import (
     JobCreateRequest,
     JobResponse,
     JobListResponse,
+    DeployRecommendationRequest,
+    DeployRecommendationResponse,
     TraceResponseSchema,
     TraceSpanSchema,
     SLOResponseSchema,
@@ -678,6 +680,238 @@ async def list_jobs(
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
 
+
+@router.post(
+    "/api/v1/recommendations/deploy",
+    response_model=DeployRecommendationResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        202: {"model": DeployRecommendationResponse, "description": "Recommendation deployment accepted and enqueued"},
+        400: {"model": ErrorResponse, "description": "Invalid action rank or payload"},
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {"model": ErrorResponse, "description": "Forbidden"},
+        409: {"model": ErrorResponse, "description": "Idempotency Conflict"},
+        422: {"model": ErrorResponse, "description": "Validation Error"},
+        429: {"model": ErrorResponse, "description": "Queue full or quota exceeded"},
+    },
+    tags=["Actions"],
+    summary="Deploy Automated Recovery Recommendation",
+    description="Dispatches a targeted automated revenue recovery rollout task into the background execution pool with idempotency protection and audit logging.",
+)
+async def deploy_recommendation(
+    request: DeployRecommendationRequest,
+    raw_request: Request,
+    user: AuthenticatedUser = Depends(require_analyst),
+) -> DeployRecommendationResponse:
+    """Deploys an approved revenue recovery action to the background execution runner."""
+    cleaned_title = request.action_title.strip()
+    if not cleaned_title:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recommendation action title cannot be empty or whitespace.",
+        )
+
+    if request.action_rank < 1 or request.action_rank > 20:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid action_rank {request.action_rank}. Must be between 1 and 20.",
+        )
+
+    runner = get_job_runner()
+    request_id = getattr(raw_request.state, "request_id", str(uuid.uuid4()))
+    trace_id = getattr(raw_request.state, "trace_id", None)
+    deployment_id = f"dep_{uuid.uuid4().hex[:12]}"
+
+    # 1. Idempotency Handling
+    idempotency_key = raw_request.headers.get("Idempotency-Key")
+    clean_key = ""
+    is_idempotent = False
+    reservation_succeeded = False
+    reservation_completed = False
+
+    if idempotency_key is not None and idempotency_key.strip():
+        clean_key = idempotency_key.strip()
+        is_valid, err_msg = validate_idempotency_key(clean_key)
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid Idempotency-Key header: {err_msg}",
+            )
+
+        payload_hash = compute_payload_hash({
+            "action_rank": request.action_rank,
+            "action_title": cleaned_title,
+            "affected_area": request.affected_area or "",
+            "estimated_revenue_impact_inr": float(request.estimated_revenue_impact_inr or 0.0),
+        })
+
+        idempotency_store = get_idempotency_store()
+        res_status, existing_rec = idempotency_store.reserve(
+            tenant_id=user.client_id,
+            key=clean_key,
+            payload_hash=payload_hash,
+            ttl_seconds=86400,
+        )
+
+        if res_status == IdempotencyReservationStatus.REPLAY:
+            record_idempotency_replay()
+            logger.info(
+                f"[{request_id}] Returning replayed recommendation deployment for key {fingerprint_idempotency_key(clean_key)}"
+            )
+            return DeployRecommendationResponse(**existing_rec.response_payload)
+
+        elif res_status == IdempotencyReservationStatus.CONFLICT:
+            record_idempotency_conflict()
+            logger.warning(
+                f"[{request_id}] Idempotency conflict for key {fingerprint_idempotency_key(clean_key)}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Idempotency conflict: Key '{clean_key}' was previously used with different parameters.",
+            )
+
+        reservation_succeeded = True
+        is_idempotent = True
+
+    # 2. Check Tenant Daily Job Quota
+    quota_mgr = get_quota_manager()
+    quota_allowed, current_jobs, max_jobs = quota_mgr.check_and_consume_job_quota(user.client_id)
+    if not quota_allowed:
+        if is_idempotent and reservation_succeeded:
+            get_idempotency_store().cancel_reservation(user.client_id, clean_key)
+        record_quota_rejection()
+        record_audit_event(
+            event_type="quota_exceeded",
+            request_id=request_id,
+            endpoint="/api/v1/recommendations/deploy",
+            http_method="POST",
+            client_id=user.client_id,
+            role=user.role,
+            status="rejected",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            error_category="quota_exceeded",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Daily background job quota exceeded ({current_jobs}/{max_jobs} jobs today).",
+            headers={"Retry-After": "3600"},
+        )
+
+    # 3. Check Tenant Active Concurrent Job Limit
+    conc_allowed, active_jobs, max_active = quota_mgr.check_concurrent_job_limit(user.client_id)
+    if not conc_allowed:
+        if is_idempotent and reservation_succeeded:
+            get_idempotency_store().cancel_reservation(user.client_id, clean_key)
+        quota_mgr.rollback_job_quota(user.client_id)
+        record_concurrency_rejection()
+        record_audit_event(
+            event_type="concurrency_limit_exceeded",
+            request_id=request_id,
+            endpoint="/api/v1/recommendations/deploy",
+            http_method="POST",
+            client_id=user.client_id,
+            role=user.role,
+            status="rejected",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            error_category="concurrency_limit_exceeded",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Tenant concurrent active job limit reached ({active_jobs}/{max_active} active jobs). Please wait for ongoing jobs to complete.",
+            headers={"Retry-After": "10"},
+        )
+
+    # 4. Submit Background Execution Job
+    try:
+        quota_mgr.record_job_started(user.client_id)
+        job_query = f"Deploy recommendation P{request.action_rank}: {cleaned_title}"
+        job = runner.submit_job(
+            task_type="action_deployment",
+            client_id=user.client_id,
+            role=user.role,
+            request_id=request_id,
+            trace_id=trace_id,
+            parameters={
+                "query": job_query,
+                "deployment_id": deployment_id,
+                "action_rank": request.action_rank,
+                "action_title": cleaned_title,
+                "affected_area": request.affected_area,
+                "estimated_revenue_impact_inr": request.estimated_revenue_impact_inr or 0.0,
+                "parameters": request.parameters or {},
+            },
+            target_fn=run_async_analysis_task,
+            query=job_query,
+        )
+
+        response_payload = DeployRecommendationResponse(
+            deployment_id=deployment_id,
+            job_id=job.job_id,
+            action_rank=request.action_rank,
+            action_title=cleaned_title,
+            status="enqueued",
+            enqueued_at=datetime.now(timezone.utc).isoformat(),
+            client_id=user.client_id,
+            role=user.role,
+            estimated_revenue_impact_inr=float(request.estimated_revenue_impact_inr or 0.0),
+            message=f"Recommendation P{request.action_rank} ({cleaned_title}) successfully enqueued for automated rollout.",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
+
+        # 5. Audit Trail Event
+        record_audit_event(
+            event_type="recommendation_deployed",
+            request_id=request_id,
+            endpoint="/api/v1/recommendations/deploy",
+            http_method="POST",
+            client_id=user.client_id,
+            role=user.role,
+            status="accepted",
+            status_code=202,
+            query_summary=f"P{request.action_rank}: {cleaned_title[:50]}",
+        )
+
+        # 6. Complete Idempotency Reservation
+        if is_idempotent and clean_key:
+            get_idempotency_store().complete(
+                tenant_id=user.client_id,
+                key=clean_key,
+                job_id=job.job_id,
+                response_payload=response_payload.model_dump(),
+                status="completed",
+            )
+            reservation_completed = True
+
+        return response_payload
+
+    except (JobRunnerDrainingError, JobRunnerStoppedError) as exc:
+        quota_mgr.record_job_finished(user.client_id)
+        if is_idempotent and clean_key and reservation_succeeded and not reservation_completed:
+            get_idempotency_store().cancel_reservation(user.client_id, clean_key)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Service draining/stopped: {str(exc)}",
+            headers={"Retry-After": "30"},
+        )
+    except JobQueueFullError as exc:
+        quota_mgr.record_job_finished(user.client_id)
+        record_queue_full_rejection()
+        if is_idempotent and clean_key and reservation_succeeded and not reservation_completed:
+            get_idempotency_store().cancel_reservation(user.client_id, clean_key)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(exc),
+            headers={"Retry-After": "10"},
+        )
+    except Exception as exc:
+        quota_mgr.record_job_finished(user.client_id)
+        if is_idempotent and clean_key and reservation_succeeded and not reservation_completed:
+            get_idempotency_store().cancel_reservation(user.client_id, clean_key)
+        logger.error(f"[{request_id}] Failed to deploy recommendation: {type(exc).__name__}: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while dispatching the recommendation deployment.",
+        )
 
 
 @router.post(

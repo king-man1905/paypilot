@@ -166,4 +166,54 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     expect(data.environment).toBeDefined();
     expect(data.secrets_status).toBeDefined();
   }, 60000);
+
+  it('8. apiClient.deployRecommendation dispatches recovery action deployment', async (ctx) => {
+    if (!isBackendLive) {
+      ctx.skip();
+      return;
+    }
+    const mockItem = {
+      rank: 1,
+      action: 'Implement Dynamic Multi-Gateway Failover Routing for UPI',
+      affected_area: 'Payment Gateways',
+      problem: 'UPI Gateway Timeout',
+      estimated_revenue_impact_inr: 4820000.0,
+      observed_loss_inr: 4820000.0,
+      confidence: 0.95,
+      priority_score: 92.4,
+      urgency: 'High' as const,
+      effort: 'Low' as const,
+      reasoning: 'Routing around failed gateway recovers transaction flow.',
+    };
+
+    const res = await apiClient.deployRecommendation(mockItem, `test_live_deploy_${Date.now()}`);
+    expect(res.deployment_id).toBeDefined();
+    expect(res.job_id).toBeDefined();
+    expect(res.action_rank).toBe(1);
+    expect(res.status).toBeDefined();
+    expect(res.message).toBeDefined();
+  }, 60000);
+
+  it('9. apiClient.deployRecommendation works with simulated fallback when offline', async () => {
+    const mockItem = {
+      rank: 1,
+      action: 'Implement Dynamic Multi-Gateway Failover Routing for UPI',
+      affected_area: 'Payment Gateways',
+      problem: 'UPI Gateway Timeout',
+      estimated_revenue_impact_inr: 4820000.0,
+      observed_loss_inr: 4820000.0,
+      confidence: 0.95,
+      priority_score: 92.4,
+      urgency: 'High' as const,
+      effort: 'Low' as const,
+      reasoning: 'Routing around failed gateway recovers transaction flow.',
+    };
+
+    const res = await apiClient.deployRecommendation(mockItem, 'test_client_deploy_fallback');
+    expect(res.deployment_id).toBeDefined();
+    expect(res.job_id).toBeDefined();
+    expect(res.action_rank).toBe(1);
+    expect(res.status).toBe('enqueued');
+    expect(res.message).toBeDefined();
+  });
 });

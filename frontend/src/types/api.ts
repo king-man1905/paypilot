@@ -90,10 +90,26 @@ export interface AnalyzeResponse {
   execution_metadata: ExecutionMetadata;
 }
 
-export interface JobCreateRequest {
-  query: string;
-  task_type?: string;
-  metadata?: Record<string, any>;
+export interface DeployRecommendationRequest {
+  action_rank: number;
+  action_title: string;
+  affected_area?: string;
+  estimated_revenue_impact_inr?: number;
+  parameters?: Record<string, any>;
+}
+
+export interface DeployRecommendationResponse {
+  deployment_id: string;
+  job_id: string;
+  action_rank: number;
+  action_title: string;
+  status: string;
+  enqueued_at: string;
+  client_id: string;
+  role: string;
+  estimated_revenue_impact_inr: number;
+  message: string;
+  timestamp: string;
 }
 
 export interface JobResponse {

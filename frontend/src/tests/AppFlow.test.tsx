@@ -107,7 +107,17 @@ describe('PayPilot Application End-to-End Screen Verification', () => {
     // Verify Executive Brief & Actions already rendered
     expect(screen.getByText('Executive Synthesis & Decision Brief')).toBeInTheDocument();
     expect(screen.getByText('Ranked Revenue Recovery Actions')).toBeInTheDocument();
-    expect(screen.getAllByText(/Implement Dynamic Multi-Gateway Failover Routing for UPI/i).length).toBeGreaterThan(0);
+    // Verify Deploy Recommendation CTA click and state transition
+    const deployButtons = screen.getAllByRole('button', { name: /Deploy Recommendation/i });
+    expect(deployButtons.length).toBeGreaterThan(0);
+    fireEvent.click(deployButtons[0]);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/enqueued for automated rollout/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Recommendation Deployed/i)).toBeInTheDocument();
+    });
 
     // Verify Specialist Evidence Tabs
     expect(screen.getByText('Deterministic Evidence Ledger')).toBeInTheDocument();

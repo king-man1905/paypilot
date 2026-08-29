@@ -4,6 +4,8 @@ import {
   ArrowRight,
   Terminal,
   Zap,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -20,6 +22,9 @@ export const IntelligencePage: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalyzeResponse | null>(MOCK_AI_ANALYSIS);
   const [jobs, setJobs] = useState<JobResponse[]>(MOCK_JOBS);
   const [activeEvidenceTab, setActiveEvidenceTab] = useState<'revenue' | 'payment' | 'checkout' | 'customer'>('revenue');
+  const [deployingRank, setDeployingRank] = useState<number | null>(null);
+  const [deployedRanks, setDeployedRanks] = useState<Record<number, { status: 'success' | 'error'; jobId?: string; message?: string }>>({});
+  const [deployMessage, setDeployMessage] = useState<{ type: 'success' | 'error'; text: string; rank: number } | null>(null);
 
   const sampleQueries = [
     'Why did my revenue decrease and where is my biggest drop-off?',
@@ -48,6 +53,63 @@ export const IntelligencePage: React.FC = () => {
       console.error('Error running analysis:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeployRecommendation = async (item: PrioritizedActionItem) => {
+    setDeployingRank(item.rank);
+    setDeployMessage(null);
+    try {
+      const idempotencyKey = `idemp_deploy_${item.rank}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const deployRes = await apiClient.deployRecommendation(item, idempotencyKey);
+
+      // Create job representation for the background job queue ledger
+      const job: JobResponse = {
+        job_id: deployRes.job_id,
+        task_type: 'action_deployment',
+        client_id: deployRes.client_id,
+        role: deployRes.role,
+        status: deployRes.status,
+        created_at: deployRes.enqueued_at,
+        query_summary: `P${deployRes.action_rank}: ${deployRes.action_title}`,
+        result: {
+          deployment_id: deployRes.deployment_id,
+          action_rank: deployRes.action_rank,
+          action_title: deployRes.action_title,
+          estimated_revenue_impact_inr: deployRes.estimated_revenue_impact_inr,
+        },
+      };
+
+      setJobs((prev) => [job, ...prev]);
+      setDeployedRanks((prev) => ({
+        ...prev,
+        [item.rank]: {
+          status: 'success',
+          jobId: deployRes.job_id,
+          message: deployRes.message,
+        },
+      }));
+      setDeployMessage({
+        type: 'success',
+        text: deployRes.message,
+        rank: item.rank,
+      });
+    } catch (err: any) {
+      console.error('Error deploying recommendation:', err);
+      setDeployedRanks((prev) => ({
+        ...prev,
+        [item.rank]: {
+          status: 'error',
+          message: err?.message || 'Deployment dispatch failed.',
+        },
+      }));
+      setDeployMessage({
+        type: 'error',
+        text: `Failed to deploy P${item.rank}: ${err?.message || 'Network or server error.'}`,
+        rank: item.rank,
+      });
+    } finally {
+      setDeployingRank(null);
     }
   };
 
@@ -217,68 +279,140 @@ export const IntelligencePage: React.FC = () => {
               </Badge>
             </div>
 
-            <div className="space-y-4">
-              {analysisResult.prioritized_actions?.map((item: PrioritizedActionItem) => (
-                <Card
-                  key={item.rank}
-                  className="p-6 border-l-4 border-l-primary hover:shadow-premium-lg transition-all"
+            {/* Deployment Feedback Banner */}
+            {deployMessage && (
+              <div
+                className={`mb-4 p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
+                  deployMessage.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-200 shadow-xs'
+                    : 'bg-red-50 text-red-900 border-red-200 shadow-xs'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {deployMessage.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  )}
+                  <span>{deployMessage.text}</span>
+                </div>
+                <button
+                  onClick={() => setDeployMessage(null)}
+                  className="text-slate-400 hover:text-slate-700 text-xs px-1.5 py-0.5 rounded-md"
+                  aria-label="Dismiss notification"
                 >
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center font-extrabold text-sm shadow-xs">
-                        P{item.rank}
-                      </span>
-                      <div>
-                        <h4 className="text-base font-bold text-slate-900">{item.action}</h4>
-                        <p className="text-xs text-slate-500 font-medium">{item.affected_area}</p>
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {analysisResult.prioritized_actions?.map((item: PrioritizedActionItem) => {
+                const deployedStatus = deployedRanks[item.rank];
+                const isDeploying = deployingRank === item.rank;
+                const isDeployed = deployedStatus?.status === 'success';
+                const hasDeployError = deployedStatus?.status === 'error';
+
+                return (
+                  <Card
+                    key={item.rank}
+                    className="p-6 border-l-4 border-l-primary hover:shadow-premium-lg transition-all"
+                  >
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center font-extrabold text-sm shadow-xs">
+                          P{item.rank}
+                        </span>
+                        <div>
+                          <h4 className="text-base font-bold text-slate-900">{item.action}</h4>
+                          <p className="text-xs text-slate-500 font-medium">{item.affected_area}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="neutral" size="sm">
+                          Effort: <strong className="ml-1 text-slate-900">{item.effort}</strong>
+                        </Badge>
+                        <Badge variant="error" size="sm">
+                          Urgency: <strong className="ml-1">{item.urgency}</strong>
+                        </Badge>
+                        <Badge variant="success" size="sm">
+                          Score: <strong className="ml-1">{item.priority_score.toFixed(1)}/100</strong>
+                        </Badge>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="neutral" size="sm">
-                        Effort: <strong className="ml-1 text-slate-900">{item.effort}</strong>
-                      </Badge>
-                      <Badge variant="error" size="sm">
-                        Urgency: <strong className="ml-1">{item.urgency}</strong>
-                      </Badge>
-                      <Badge variant="success" size="sm">
-                        Score: <strong className="ml-1">{item.priority_score.toFixed(1)}/100</strong>
-                      </Badge>
+                    {/* Problem & Impact Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4 p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase block mb-1">Diagnosed Friction</span>
+                        <p className="text-slate-800 font-medium">{item.problem}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase block mb-1">Estimated Recoverable GTV</span>
+                        <p className="text-base font-extrabold text-emerald-700 font-mono">
+                          <FormattedCurrency amountInINR={item.estimated_revenue_impact_inr} />
+                        </p>
+                        <span className="text-[10px] text-slate-400">
+                          Observed Loss: <FormattedCurrency amountInINR={item.observed_loss_inr} />
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase block mb-1">Analytical Reasoning</span>
+                        <p className="text-slate-700 leading-relaxed">{item.reasoning}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Problem & Impact Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4 p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs">
-                    <div>
-                      <span className="text-slate-400 font-bold uppercase block mb-1">Diagnosed Friction</span>
-                      <p className="text-slate-800 font-medium">{item.problem}</p>
+                    {/* Action CTA */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400 font-mono">
+                          Confidence: {(item.confidence * 100).toFixed(0)}%
+                        </span>
+                        {isDeployed && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Deployed ({deployedStatus?.jobId})
+                          </span>
+                        )}
+                        {hasDeployError && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
+                            <AlertCircle className="w-3 h-3 text-red-600" />
+                            Deployment Failed
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant={isDeployed ? 'secondary' : 'primary'}
+                        size="sm"
+                        onClick={() => handleDeployRecommendation(item)}
+                        isLoading={isDeploying}
+                        leftIcon={
+                          isDeployed ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : undefined
+                        }
+                        rightIcon={
+                          isDeployed ? undefined : (
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          )
+                        }
+                        className={
+                          isDeployed
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                            : ''
+                        }
+                      >
+                        {isDeployed
+                          ? 'Recommendation Deployed'
+                          : hasDeployError
+                          ? 'Retry Deployment'
+                          : 'Deploy Recommendation'}
+                      </Button>
                     </div>
-                    <div>
-                      <span className="text-slate-400 font-bold uppercase block mb-1">Estimated Recoverable GTV</span>
-                      <p className="text-base font-extrabold text-emerald-700 font-mono">
-                        <FormattedCurrency amountInINR={item.estimated_revenue_impact_inr} />
-                      </p>
-                      <span className="text-[10px] text-slate-400">
-                        Observed Loss: <FormattedCurrency amountInINR={item.observed_loss_inr} />
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 font-bold uppercase block mb-1">Analytical Reasoning</span>
-                      <p className="text-slate-700 leading-relaxed">{item.reasoning}</p>
-                    </div>
-                  </div>
-
-                  {/* Action CTA */}
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-xs text-slate-400 font-mono">
-                      Confidence: {(item.confidence * 100).toFixed(0)}%
-                    </span>
-                    <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                      Deploy Recommendation
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
 

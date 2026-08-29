@@ -45,3 +45,6 @@ node_modules/
 *.key
 *.p12
 *.crt
+
+# Generated Evaluation & Pipeline Artifacts
+evaluation/*_report.json

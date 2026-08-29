@@ -249,7 +249,7 @@ def calculate_priority_score(
     impact_score = min(WEIGHT_IMPACT, norm_impact * WEIGHT_IMPACT)
 
     # 2. Confidence Score (0 - 25 pts)
-    conf_clamped = max(0.0, min(1.0, float(confidence)))
+    conf_clamped = max(0.0, min(1.0, confidence))
     confidence_score = conf_clamped * WEIGHT_CONFIDENCE
 
     # 3. Urgency Score (0 - 20 pts)
@@ -261,7 +261,7 @@ def calculate_priority_score(
     effort_score = eff_multiplier * WEIGHT_EFFORT
 
     total_score = impact_score + confidence_score + urgency_score + effort_score
-    return round(float(total_score), 2)
+    return round(total_score, 2)
 
 
 def generate_candidate_recovery_actions(

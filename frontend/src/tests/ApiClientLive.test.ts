@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { apiClient, BASE_URL } from '../api/client';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import { apiClient, BASE_URL, resetSessionToken } from '../api/client';
 
 const BACKEND_URL =
   (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL) ||
@@ -22,6 +22,12 @@ const HEADERS = {
 };
 
 describe('API Client Unit & Fallback Capabilities', () => {
+  beforeEach(() => {
+    // Reset session token state between tests to ensure isolation
+    resetSessionToken();
+    localStorage.removeItem('paypilot_api_key');
+  });
+
   it('Resolves BASE_URL from environment or defaults to relative path', () => {
     expect(typeof BASE_URL).toBe('string');
   });
@@ -65,8 +71,12 @@ describe('API Client Unit & Fallback Capabilities', () => {
     }
   });
 
-  it('Sends an empty X-API-Key (never a hardcoded credential) when no key is configured', async () => {
+  it('Does not send a hardcoded credential when no key is configured — uses session token or empty auth', async () => {
+    // When no manual key is set, the client tries to acquire a session token from the backend.
+    // In the test environment (backend offline), session token acquisition fails silently,
+    // so no auth header is sent. The key property: no hardcoded key ever appears.
     localStorage.removeItem('paypilot_api_key');
+    resetSessionToken();
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     try {
@@ -75,8 +85,9 @@ describe('API Client Unit & Fallback Capabilities', () => {
       expect(call).toBeDefined();
       const [, init] = call!;
       const headers = init?.headers as Record<string, string>;
-      expect(headers['X-API-Key']).toBe('');
-      expect(headers['X-API-Key']).not.toContain('paypilot-prod');
+      // Must NOT contain any hardcoded API key
+      expect(headers['X-API-Key']).toBeUndefined();
+      expect(JSON.stringify(headers)).not.toContain('paypilot-prod');
     } finally {
       fetchSpy.mockRestore();
     }

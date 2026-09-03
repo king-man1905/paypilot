@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { ensureSessionToken } from '../api/client';
 
 interface AuthContextType {
   apiKey: string;
@@ -21,6 +22,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return localStorage.getItem('paypilot_client_id') || 'merchant_enterprise_01';
   });
   const [role, setRole] = useState<'admin' | 'analyst'>('admin');
+
+  // Automatically acquire a session token from the backend when no manual key is set.
+  // The session token is stored in-memory in the API client module (never in localStorage
+  // or the JS bundle) and grants analyst-level access via the backend's CORS-protected
+  // /api/v1/auth/session endpoint.
+  useEffect(() => {
+    if (!apiKey) {
+      ensureSessionToken().catch(() => {
+        // Silent: session token acquisition failures are non-fatal;
+        // the API client will retry on the next API call.
+      });
+    }
+  }, [apiKey]);
 
   const updateApiKey = (key: string) => {
     setApiKey(key);

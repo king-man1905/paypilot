@@ -6,6 +6,11 @@ from backend.security.auth import (
     require_admin,
     require_analyst,
 )
+from backend.security.session import (
+    create_session_token,
+    validate_session_token,
+    SESSION_TOKEN_TTL_SECONDS,
+)
 from backend.security.idempotency import (
     BaseIdempotencyStore,
     IdempotencyRecord,
@@ -45,6 +50,9 @@ __all__ = [
     "get_current_user",
     "require_analyst",
     "require_admin",
+    "create_session_token",
+    "validate_session_token",
+    "SESSION_TOKEN_TTL_SECONDS",
     "SecurityHeadersMiddleware",
     "RateLimitMiddleware",
     "BaseRateLimiter",

@@ -220,6 +220,67 @@ async def readiness_check() -> ReadinessResponse:
     return readiness
 
 
+@router.post(
+    "/api/v1/auth/session",
+    tags=["System"],
+    summary="Acquire Frontend Session Token",
+    description=(
+        "Issues a short-lived, HMAC-signed session token for static frontend clients. "
+        "The frontend calls this endpoint on initialization; the token is used as a "
+        "Bearer credential for all subsequent API calls. The actual API key is never "
+        "transmitted to the browser. Requests must originate from a CORS-allowed origin."
+    ),
+    responses={
+        200: {"description": "Session token issued successfully"},
+        403: {"description": "Origin not allowed or API key not configured"},
+    },
+)
+async def acquire_session_token(
+    raw_request: Request,
+) -> Dict[str, Any]:
+    """Issues a session token for the requesting frontend origin.
+
+    Security: This endpoint does NOT require an existing API key. It is protected by:
+    1. CORS origin allowlist (only the deployed frontend can call it)
+    2. The token it issues grants analyst-level access only (never admin)
+    3. Tokens are short-lived (default 1 hour TTL)
+    """
+    from backend.config import CORS_ALLOWED_ORIGINS
+    from backend.security.session import create_session_token, SESSION_TOKEN_TTL_SECONDS
+
+    # Extract origin from the request
+    origin = raw_request.headers.get("origin", "").strip()
+
+    if not origin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Origin header is required for session token issuance.",
+        )
+
+    # Validate the origin is in the CORS allowlist
+    if origin not in CORS_ALLOWED_ORIGINS:
+        logger.warning(f"Session token request from disallowed origin: {origin}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Origin not in allowed origins list.",
+        )
+
+    token = create_session_token(origin)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Session token issuance is unavailable (API key not configured).",
+        )
+
+    return {
+        "session_token": token,
+        "token_type": "Bearer",
+        "expires_in_seconds": SESSION_TOKEN_TTL_SECONDS,
+        "granted_role": "analyst",
+    }
+
+
+
 @router.get(
     "/metrics",
     tags=["System"],

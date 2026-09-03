@@ -31,6 +31,11 @@ EXEMPT_RATE_LIMIT_PATHS = (
     "/openapi.json",
 )
 
+# Strict per-IP limit for session token issuance: this endpoint requires no credential at
+# all, so it must not be rate-limit-exempt — an attacker could otherwise mint unlimited
+# tokens (each hashing to a distinct rate-limit bucket) to sidestep the analyze/job limits.
+SESSION_TOKEN_RATE_LIMIT_PER_MINUTE = 10
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Injects standard production API security headers into all responses."""
@@ -99,6 +104,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         elif path.startswith("/api/v1/jobs"):
             cfg_limit = get_job_rate_limit_per_minute()
             limit = min(cfg_limit, def_limit)
+            window = def_window
+        elif path == "/api/v1/auth/session":
+            limit = min(SESSION_TOKEN_RATE_LIMIT_PER_MINUTE, def_limit)
             window = def_window
         else:
             limit = None

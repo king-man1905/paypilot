@@ -43,19 +43,79 @@ const getBaseUrl = (): string => {
 
 export const BASE_URL = getBaseUrl().replace(/\/+$/, '');
 
+/**
+ * Module-scoped session token state — kept in memory only, never persisted
+ * to localStorage or embedded in source. The token is acquired at runtime
+ * from the backend's /api/v1/auth/session endpoint.
+ */
+let _sessionToken: string = '';
+let _sessionTokenExpiresAt: number = 0;
+let _sessionTokenPromise: Promise<void> | null = null;
+
+/**
+ * Acquires a session token from the backend. The backend verifies the
+ * request's Origin header against its CORS allowlist and issues an
+ * HMAC-signed, short-lived token. The actual API key never leaves the server.
+ */
+async function acquireSessionToken(): Promise<void> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/auth/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      _sessionToken = data.session_token || '';
+      _sessionTokenExpiresAt = Date.now() + (data.expires_in_seconds || 3600) * 1000 - 60_000; // Refresh 1 min early
+    }
+  } catch {
+    // Session token acquisition failed (backend unreachable) — will fall back to
+    // localStorage key or send empty header (backend rejects with 401 as expected).
+  }
+}
+
+/**
+ * Ensures a valid session token is available. Re-acquires if expired or missing.
+ * Deduplicates concurrent calls so only one network request is in-flight.
+ */
+async function ensureSessionToken(): Promise<void> {
+  // Skip if user has manually configured a key in Settings (takes priority)
+  const manualKey = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_api_key')) || '';
+  if (manualKey) return;
+
+  // Skip if token is still valid
+  if (_sessionToken && Date.now() < _sessionTokenExpiresAt) return;
+
+  // Deduplicate concurrent acquisition
+  if (!_sessionTokenPromise) {
+    _sessionTokenPromise = acquireSessionToken().finally(() => {
+      _sessionTokenPromise = null;
+    });
+  }
+  await _sessionTokenPromise;
+}
+
 class PayPilotApiClient {
   private getHeaders(customHeaders?: Record<string, string>): HeadersInit {
-    // No hardcoded key fallback: an unconfigured key means an empty header, which the backend
-    // correctly rejects with 401 — never silently authenticate with a baked-in credential.
-    const apiKey = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_api_key')) || '';
+    // Priority: manual key from Settings > session token > empty (rejected by backend)
+    const manualKey = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_api_key')) || '';
     const clientId = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_client_id')) || 'merchant_enterprise_01';
 
-    return {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-API-Key': apiKey,
       'X-Client-ID': clientId,
       ...(customHeaders || {}),
     };
+
+    if (manualKey) {
+      // User has explicitly configured a key via the Settings page
+      headers['X-API-Key'] = manualKey;
+    } else if (_sessionToken) {
+      // Use the session token acquired from the backend
+      headers['Authorization'] = `Bearer ${_sessionToken}`;
+    }
+
+    return headers;
   }
 
   /**
@@ -121,6 +181,7 @@ class PayPilotApiClient {
    * analysis result (see IntelligencePage's error state handling).
    */
   async analyze(query: string): Promise<AnalyzeResponse> {
+    await ensureSessionToken();
     const res = await fetch(`${BASE_URL}/api/v1/analyze`, {
       method: 'POST',
       headers: this.getHeaders(),
@@ -145,7 +206,8 @@ class PayPilotApiClient {
     idempotencyKey?: string,
     taskType: string = 'async_analysis',
     metadata?: Record<string, any>
-  ): Promise<JobResponse> {
+  ) : Promise<JobResponse> {
+    await ensureSessionToken();
     const customHeaders: Record<string, string> = {};
     if (idempotencyKey) {
       customHeaders['Idempotency-Key'] = idempotencyKey;
@@ -182,6 +244,7 @@ class PayPilotApiClient {
     idempotencyKey?: string,
     parameters?: Record<string, any>
   ): Promise<DeployRecommendationResponse> {
+    await ensureSessionToken();
     const customHeaders: Record<string, string> = {};
     const idemp =
       idempotencyKey ||
@@ -245,6 +308,7 @@ class PayPilotApiClient {
    */
   async listJobs(limit = 20, offset = 0, statusFilter?: string): Promise<JobListResponse> {
     try {
+      await ensureSessionToken();
       const params = new URLSearchParams();
       params.set('limit', limit.toString());
       params.set('offset', offset.toString());
@@ -272,6 +336,7 @@ class PayPilotApiClient {
    */
   async getJob(jobId: string): Promise<JobResponse> {
     try {
+      await ensureSessionToken();
       const res = await fetch(`${BASE_URL}/api/v1/jobs/${jobId}`, {
         headers: this.getHeaders(),
       });
@@ -290,6 +355,7 @@ class PayPilotApiClient {
    */
   async getAuditTrail(limit = 50, offset = 0, eventType?: string): Promise<AuditTrailResponse> {
     try {
+      await ensureSessionToken();
       const params = new URLSearchParams();
       params.set('limit', limit.toString());
       params.set('offset', offset.toString());
@@ -317,6 +383,7 @@ class PayPilotApiClient {
    */
   async getSLOStatus(): Promise<SLOResponseSchema> {
     try {
+      await ensureSessionToken();
       const res = await fetch(`${BASE_URL}/admin/slo`, {
         headers: this.getHeaders(),
       });
@@ -332,6 +399,7 @@ class PayPilotApiClient {
    */
   async getConfigDiagnostics(): Promise<ConfigDiagnosticsSchema> {
     try {
+      await ensureSessionToken();
       const res = await fetch(`${BASE_URL}/admin/config`, {
         headers: this.getHeaders(),
       });
@@ -343,4 +411,14 @@ class PayPilotApiClient {
   }
 }
 
+/**
+ * Resets session token state. Used by tests to ensure isolation.
+ */
+export function resetSessionToken(): void {
+  _sessionToken = '';
+  _sessionTokenExpiresAt = 0;
+  _sessionTokenPromise = null;
+}
+
+export { ensureSessionToken };
 export const apiClient = new PayPilotApiClient();

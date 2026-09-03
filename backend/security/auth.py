@@ -2,7 +2,8 @@
 
 Provides API key extraction (via X-API-Key and Authorization: Bearer headers),
 constant-time timing-attack-safe validation via secrets.compare_digest,
-and role-based access control (analyst vs admin).
+role-based access control (analyst vs admin), and session token validation
+for static frontend clients that cannot safely store API keys.
 """
 
 import logging
@@ -91,7 +92,36 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 3. Constant-time timing-attack safe validation
+    # 3a. Check for session token (issued by /api/v1/auth/session for static frontends)
+    if token.startswith("pps_"):
+        from backend.security.session import validate_session_token
+        request_origin = request.headers.get("origin")
+        is_valid, reason = validate_session_token(token, request_origin=request_origin)
+        if is_valid:
+            # Session tokens grant analyst-level access only — never admin, regardless of
+            # which endpoint is being called. (The role check below is what actually
+            # enforces this; the "analyst" label alone is not a security boundary.)
+            if required_role == "admin":
+                logger.warning(f"Forbidden: session token attempted admin access to {request.url.path}.")
+                record_error("forbidden_error")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Forbidden: Session tokens cannot access administrative resources. An admin API key is required.",
+                )
+            client_tag = "frontend-session"
+            request.state.client_id = client_tag
+            request.state.role = "analyst"
+            return AuthenticatedUser(client_id=client_tag, role="analyst")
+        else:
+            logger.warning(f"Session token rejected on {request.url.path}: {reason}.")
+            record_error("auth_error")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid or expired session token: {reason}.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    # 3b. Constant-time timing-attack safe validation of API keys
     is_admin = bool(configured_admin_key) and secrets.compare_digest(token, configured_admin_key)
     is_analyst = bool(configured_key) and secrets.compare_digest(token, configured_key)
 

@@ -284,3 +284,114 @@ def test_cors_rejects_unknown_origin(client):
     )
     assert response.headers.get("access-control-allow-origin") is None
 
+
+# --- Session token authentication (/api/v1/auth/session) ---------------------------------
+
+SESSION_ORIGIN = "http://localhost:5173"  # in the default CORS allowlist
+
+
+def test_session_token_issued_for_allowed_origin(client):
+    """Verifies a valid, analyst-scoped session token is issued for an allowed origin."""
+    response = client.post("/api/v1/auth/session", headers={"Origin": SESSION_ORIGIN})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["session_token"].startswith("pps_")
+    assert data["granted_role"] == "analyst"
+
+
+def test_session_token_rejected_for_disallowed_origin(client):
+    """Verifies session tokens are refused for an origin outside the CORS allowlist."""
+    response = client.post(
+        "/api/v1/auth/session", headers={"Origin": "https://evil-attacker-site.example"}
+    )
+    assert response.status_code == 403
+
+
+def test_session_token_grants_analyst_access(client):
+    """Verifies an issued session token authenticates an analyst-level endpoint."""
+    token = client.post("/api/v1/auth/session", headers={"Origin": SESSION_ORIGIN}).json()["session_token"]
+    with patch_offline_evaluation_llm():
+        response = client.post(
+            "/api/v1/analyze",
+            json={"query": "Why did revenue drop?"},
+            headers={"Authorization": f"Bearer {token}", "Origin": SESSION_ORIGIN},
+        )
+    assert response.status_code == 200
+
+
+def test_session_token_cannot_access_admin_endpoint(client):
+    """Regression test: a session token must NEVER grant admin access, even though it
+    passes signature/TTL/origin validation. (Previously, get_current_user's session-token
+    branch returned before the required_role check ran, so any valid session token could
+    reach admin-only routes like /metrics and /admin/audit.)"""
+    token = client.post("/api/v1/auth/session", headers={"Origin": SESSION_ORIGIN}).json()["session_token"]
+    response = client.get(
+        "/metrics", headers={"Authorization": f"Bearer {token}", "Origin": SESSION_ORIGIN}
+    )
+    assert response.status_code == 403
+
+
+def test_session_token_forged_signature_rejected(client):
+    """Verifies a tampered/forged session token is rejected."""
+    response = client.post(
+        "/api/v1/analyze",
+        json={"query": "Why did revenue drop?"},
+        headers={"Authorization": "Bearer pps_deadbeefdeadbeef.1700000000.aaaa.bbbb", "Origin": SESSION_ORIGIN},
+    )
+    assert response.status_code == 401
+
+
+def test_session_token_signed_and_expires():
+    """Unit-level check of the session token module itself (bypassing the HTTP layer):
+    a freshly issued token validates; a tampered signature and an expired timestamp
+    are both rejected."""
+    import hashlib
+    import hmac
+
+    from backend.config import get_paypilot_api_key
+    from backend.security.session import create_session_token, validate_session_token
+
+    token = create_session_token(SESSION_ORIGIN)
+    assert token is not None
+    ok, _ = validate_session_token(token, request_origin=SESSION_ORIGIN)
+    assert ok is True
+
+    # Tampered signature
+    tampered = token[:-4] + "0000"
+    ok, _ = validate_session_token(tampered, request_origin=SESSION_ORIGIN)
+    assert ok is False
+
+    # Forged token with an issued_at far enough in the past to be expired
+    body = token[4:].rsplit(".", 1)[0]  # "{origin_hash}.{issued_at}.{nonce}"
+    origin_hash, issued_at, nonce = body.split(".")
+    old_payload = f"{origin_hash}.{int(issued_at) - 999999}.{nonce}"
+    old_sig = hmac.new(
+        get_paypilot_api_key().encode("utf-8"), old_payload.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    expired_token = f"pps_{old_payload}.{old_sig}"
+    ok, reason = validate_session_token(expired_token, request_origin=SESSION_ORIGIN)
+    assert ok is False
+    assert "expired" in reason.lower()
+
+
+def test_session_token_missing_origin_header_rejected(client):
+    """Regression test: a session token replayed without an Origin header (e.g. via curl,
+    Postman, or a server-to-server replay of a stolen token) must be rejected, not silently
+    treated as exempt from origin binding."""
+    token = client.post("/api/v1/auth/session", headers={"Origin": SESSION_ORIGIN}).json()["session_token"]
+    response = client.post(
+        "/api/v1/analyze",
+        json={"query": "Why did revenue drop?"},
+        headers={"Authorization": f"Bearer {token}"},  # no Origin header
+    )
+    assert response.status_code == 401
+
+
+def test_session_token_endpoint_is_rate_limited(client):
+    """Verifies /api/v1/auth/session is no longer exempt from rate limiting — an
+    unauthenticated attacker must not be able to mint unlimited session tokens."""
+    responses = [
+        client.post("/api/v1/auth/session", headers={"Origin": SESSION_ORIGIN}) for _ in range(15)
+    ]
+    assert any(r.status_code == 429 for r in responses)
+

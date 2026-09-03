@@ -87,9 +87,17 @@ export const TransactionsPage: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Transactions Ledger
-          </h2>
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Transactions Ledger
+            </h2>
+            <span
+              className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300"
+              title="This table shows illustrative sample rows, not a live backend feed. No transaction-list API is exposed by the backend today."
+            >
+              Demo / Simulated Data
+            </span>
+          </div>
           <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">
             Search, filter, and inspect detailed payment events, checkout states, and failure diagnostics.
           </p>

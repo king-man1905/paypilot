@@ -38,8 +38,8 @@ docker run -d \
   -p 8000:8000 \
   -e PAYPILOT_ENV=production \
   -e REQUIRE_AUTH=true \
-  -e PAYPILOT_API_KEY=paypilot-prod-analyst-key \
-  -e PAYPILOT_ADMIN_KEY=paypilot-prod-admin-key \
+  -e PAYPILOT_API_KEY=your_analyst_api_key \
+  -e PAYPILOT_ADMIN_KEY=your_admin_api_key \
   -e NVIDIA_API_KEY=your_nvidia_api_key \
   paypilot:latest
 ```

@@ -38,8 +38,10 @@ def sample_evidence():
             "gross_failed_value_inr": 12654909.17,
             "highest_failure_method": {"method": "Netbanking", "failure_rate_pct": 21.57},
             "payment_methods": {
-                "Netbanking": {"failed_amount": 2500000.0, "total_attempts": 3000},
-                "UPI": {"failed_amount": 4000000.0, "total_attempts": 6000},
+                # Keys mirror the real shape returned by analytics.get_revenue_by_payment_method()
+                # (lost_failed_value, not failed_amount/lost_revenue) — see regression test below.
+                "Netbanking": {"lost_failed_value": 2500000.0, "total_attempts": 3000},
+                "UPI": {"lost_failed_value": 4000000.0, "total_attempts": 6000},
             },
             "top_overall_failure_reasons": [
                 {"failure_reason": "BANK_SERVER_TIMEOUT", "count": 520, "lost_revenue_inr": 1850000.0},
@@ -142,7 +144,7 @@ def test_empty_and_missing_evidence():
             "overall_success_rate_pct": 80.0,
             "gross_failed_value_inr": 100000.0,
             "highest_failure_method": {"method": "Netbanking", "failure_rate_pct": 25.0},
-            "payment_methods": {"Netbanking": {"failed_amount": 50000.0}},
+            "payment_methods": {"Netbanking": {"lost_failed_value": 50000.0}},
             "top_overall_failure_reasons": [],
             "top_upi_failure_reasons": [],
         }
@@ -445,3 +447,99 @@ def test_clean_llm_synthesis_cases_a_through_l(sample_evidence):
     assert "Estimated Recoverable Opportunity" in det_ans
     assert "What-If +3.0% Success Uplift" in det_ans
     assert "Realized Revenue" in det_ans
+
+
+def test_worst_payment_method_action_uses_real_analytics_field_name():
+    """Regression test: the worst-payment-method recovery rule must read the actual field
+    name returned by analytics.get_revenue_by_payment_method() ('lost_failed_value'), not the
+    stale 'failed_amount'/'lost_revenue' keys that never appear in real evidence. Netbanking is
+    above the 15% failure-rate threshold and above zero lost value, so the rule must trigger.
+    """
+    evidence = {
+        "payment": {
+            "highest_failure_method": {"method": "Netbanking", "failure_rate_pct": 21.57},
+            "payment_methods": {
+                "Netbanking": {
+                    "total_attempts": 3237,
+                    "successful_transactions": 2538,
+                    "failed_transactions": 699,
+                    "success_rate_pct": 78.43,
+                    "realized_revenue": 9800000.0,
+                    "lost_failed_value": 2500000.0,
+                },
+            },
+            "top_overall_failure_reasons": [],
+            "top_upi_failure_reasons": [],
+        }
+    }
+
+    actions = generate_candidate_recovery_actions(evidence, {})
+    netbanking_actions = [a for a in actions if "Netbanking" in a["action"]]
+
+    assert len(netbanking_actions) == 1, (
+        "Expected exactly one Netbanking-specific recovery action; got "
+        f"{[a['action'] for a in actions]}"
+    )
+    action = netbanking_actions[0]
+    assert action["observed_loss_inr"] == 2500000.0
+    assert action["estimated_revenue_impact_inr"] == round(2500000.0 * 0.30, 2)
+
+
+def test_worst_payment_method_action_absent_when_lost_value_missing():
+    """Verifies rule 2 (worst-payment-method) specifically stays silent when the worst method
+    has no recorded loss, rather than silently using a wrong/zero value from a bad key. Uses the
+    rule's distinctive 'metrics.method' marker to isolate it from the unrelated <4-actions
+    default-template backfill, which also happens to include a Netbanking-titled template.
+    """
+    evidence = {
+        "payment": {
+            "highest_failure_method": {"method": "Netbanking", "failure_rate_pct": 21.57},
+            "payment_methods": {"Netbanking": {"total_attempts": 100}},  # no lost_failed_value
+            "top_overall_failure_reasons": [],
+            "top_upi_failure_reasons": [],
+        }
+    }
+    actions = generate_candidate_recovery_actions(evidence, {})
+    rule_2_actions = [
+        a for a in actions
+        if isinstance(a.get("metrics"), dict) and a["metrics"].get("method") == "Netbanking"
+    ]
+    assert rule_2_actions == []
+
+
+def test_estimated_recovery_exposes_two_distinct_labeled_definitions(sample_evidence):
+    """Verifies the API-facing estimated_recovery payload clearly distinguishes the two
+    recoverable-opportunity concepts (sum of ranked actions vs. technical-loss estimate) and
+    carries an explicit disclaimer that neither is actual/confirmed recovered revenue.
+    """
+    state: PayPilotState = {
+        "user_query": "Why did my revenue drop?",
+        "intent": "revenue",
+        "required_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+        "executed_agents": ["revenue_agent", "payment_agent", "checkout_agent", "customer_agent"],
+        "tool_results": {},
+        "evidence": sample_evidence,
+        "analysis": {"key_facts": {}},
+        "recommendations": [],
+        "recovery_actions": [],
+        "priority_actions": [],
+        "final_answer": None,
+        "errors": [],
+    }
+    out_state = recovery_agent_node(state)
+    recovery = out_state["estimated_recovery"]
+
+    # Both distinct concepts must be present, separately labeled, and not silently collapsed.
+    assert "estimated_recovery_from_prioritized_actions_inr" in recovery
+    assert "identified_recoverable_opportunity_inr" in recovery
+    assert recovery["estimated_recovery_from_prioritized_actions_inr"] == recovery["total_estimated_recoverable_inr"]
+
+    # These are two genuinely different numbers by design for this fixture (sum-of-actions vs.
+    # 70%-of-technical-loss) — assert they are not accidentally identical/collapsed into one value.
+    assert recovery["identified_recoverable_opportunity_inr"] != recovery["estimated_recovery_from_prioritized_actions_inr"]
+
+    # Must never claim these are actual/confirmed recovered money.
+    assert "note" in recovery
+    note_lower = recovery["note"].lower()
+    assert "not confirmed" in note_lower or "not actual" in note_lower or "estimated" in note_lower
+    assert "actual" in note_lower or "confirmed" in note_lower

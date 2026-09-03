@@ -214,7 +214,7 @@ class PayPilotSettings:
     llm_provider: str = "nvidia"
     nvidia_api_key: str = ""
     nvidia_model: str = "nvidia/nemotron-3-super-120b-a12b"
-    supervisor_model: str = "nvidia/nemotron-3-nano-30b-a3b"
+    supervisor_model: str = "nvidia/nemotron-3-super-120b-a12b"
     aggregator_model: str = "nvidia/nemotron-3-super-120b-a12b"
     recovery_model: str = "nvidia/nemotron-3-super-120b-a12b"
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
@@ -336,7 +336,7 @@ class PayPilotSettings:
             llm_provider=os.getenv("LLM_PROVIDER", "nvidia").strip().lower(),
             nvidia_api_key=nv_key,
             nvidia_model=os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip(),
-            supervisor_model=os.getenv("SUPERVISOR_MODEL", "nvidia/nemotron-3-nano-30b-a3b").strip(),
+            supervisor_model=os.getenv("SUPERVISOR_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip(),
             aggregator_model=os.getenv("AGGREGATOR_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip(),
             recovery_model=os.getenv("RECOVERY_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip(),
             nvidia_base_url=os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip(),
@@ -745,7 +745,7 @@ DATA_PATH = ROOT_DIR / os.getenv("DATA_PATH", "data/processed/merchant_transacti
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "nvidia").strip().lower()
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "").strip()
 NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
-SUPERVISOR_MODEL = os.getenv("SUPERVISOR_MODEL", "nvidia/nemotron-3-nano-30b-a3b").strip()
+SUPERVISOR_MODEL = os.getenv("SUPERVISOR_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
 AGGREGATOR_MODEL = os.getenv("AGGREGATOR_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
 RECOVERY_MODEL = os.getenv("RECOVERY_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").strip()
@@ -795,6 +795,16 @@ SLO_ERROR_RATE_PERCENT = float(os.getenv("SLO_ERROR_RATE_PERCENT", 1.0))
 SLO_JOB_SUCCESS_PERCENT = float(os.getenv("SLO_JOB_SUCCESS_PERCENT", 99.0))
 SLO_ALERT_COOLDOWN_SECONDS = float(os.getenv("SLO_ALERT_COOLDOWN_SECONDS", 60.0))
 DATA_SEED = int(os.getenv("DATA_SEED", 42))
+
+# CORS: explicit allowlist, comma-separated. Defaults cover the deployed frontend + local dev.
+CORS_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "https://paypilot-frontend-cptp.onrender.com,http://localhost:5173,http://localhost:3000",
+    ).split(",")
+    if o.strip()
+]
 
 DISCLAIMER_TEXT = (
     "⚠️ Safety & Data Honesty: This prototype uses synthetic merchant/payment data "

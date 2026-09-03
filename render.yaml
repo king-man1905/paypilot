@@ -25,7 +25,7 @@ services:
       - key: NVIDIA_MODEL
         value: nvidia/nemotron-3-super-120b-a12b
       - key: SUPERVISOR_MODEL
-        value: nvidia/nemotron-3-nano-30b-a3b
+        value: nvidia/nemotron-3-super-120b-a12b
       - key: AGGREGATOR_MODEL
         value: nvidia/nemotron-3-super-120b-a12b
       - key: RECOVERY_MODEL
@@ -37,9 +37,9 @@ services:
       - key: LLM_MAX_RETRIES
         value: "1"
       - key: PAYPILOT_API_KEY
-        value: paypilot-prod-analyst-key
+        sync: false
       - key: PAYPILOT_ADMIN_KEY
-        value: paypilot-prod-admin-key
+        sync: false
       - key: REQUIRE_AUTH
         value: "true"
       - key: RATE_LIMIT_ENABLED

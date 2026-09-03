@@ -294,7 +294,9 @@ def test_llm_generate_span_contains_node_metadata(monkeypatch):
         assert len(llm_spans) >= 1
         meta = llm_spans[0].metadata
         assert meta.get("node") == "supervisor"
-        assert meta.get("model") == "nvidia/nemotron-3-nano-30b-a3b"
+        # SUPERVISOR_MODEL default (see backend/config.py) — nemotron-3-nano-30b-a3b was
+        # retired by NVIDIA (EOL 2026-09-01); supervisor now shares the aggregator/recovery model.
+        assert meta.get("model") == "nvidia/nemotron-3-super-120b-a12b"
 
 
 # ============================================================================

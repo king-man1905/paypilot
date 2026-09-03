@@ -99,9 +99,13 @@ services:
       - SHUTDOWN_TIMEOUT_SECONDS=${SHUTDOWN_TIMEOUT_SECONDS:-15.0}
 
       # Authentication & Security
+      # No default key values here — the old committed defaults are permanently compromised.
+      # Set REQUIRE_AUTH/PAYPILOT_API_KEY/PAYPILOT_ADMIN_KEY in your shell or a local .env file
+      # (docker-compose reads .env automatically); leaving them unset means auth is fully locked
+      # out (REQUIRE_AUTH defaults true) rather than silently open or using a known key.
       - REQUIRE_AUTH=${REQUIRE_AUTH:-true}
-      - PAYPILOT_API_KEY=${PAYPILOT_API_KEY:-paypilot-prod-analyst-key}
-      - PAYPILOT_ADMIN_KEY=${PAYPILOT_ADMIN_KEY:-paypilot-prod-admin-key}
+      - PAYPILOT_API_KEY=${PAYPILOT_API_KEY:-}
+      - PAYPILOT_ADMIN_KEY=${PAYPILOT_ADMIN_KEY:-}
 
       # LLM / Inference Provider
       - LLM_PROVIDER=${LLM_PROVIDER:-nvidia}

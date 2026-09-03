@@ -86,7 +86,15 @@ class AnalyzeResponse(BaseModel):
     prioritized_actions: List[PrioritizedActionItem] = Field(description="Ranked, measurable recovery actions")
     executive_recommendation: str = Field(description="Decisive recommendation on what the merchant must execute first")
     final_answer: str = Field(description="Complete executive briefing report")
-    estimated_recovery: Dict[str, Any] = Field(description="Aggregate estimated recoverable opportunity summary")
+    estimated_recovery: Dict[str, Any] = Field(
+        description=(
+            "Aggregate estimated recoverable opportunity summary. Contains two distinct, "
+            "non-interchangeable estimates: 'estimated_recovery_from_prioritized_actions_inr' "
+            "(sum of the P1-P4 ranked actions' individual impact estimates) and "
+            "'identified_recoverable_opportunity_inr' (a conservative technical-loss-based estimate). "
+            "Both are model projections, not confirmed or actual recovered revenue — see the 'note' field."
+        )
+    )
     llm_provider: str = Field(description="Active LLM provider name")
     model: str = Field(description="Active LLM model name")
     node_models: Optional[Dict[str, str]] = Field(default=None, description="Granular model identifiers utilized per agent node")

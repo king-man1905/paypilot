@@ -118,7 +118,7 @@ def get_llm(
     if model:
         target_model = model.strip()
     elif node_type == "supervisor":
-        target_model = (os.getenv("SUPERVISOR_MODEL", SUPERVISOR_MODEL or "nvidia/nemotron-3-nano-30b-a3b")).strip()
+        target_model = (os.getenv("SUPERVISOR_MODEL", SUPERVISOR_MODEL or "nvidia/nemotron-3-super-120b-a12b")).strip()
     elif node_type == "aggregator":
         target_model = (os.getenv("AGGREGATOR_MODEL", AGGREGATOR_MODEL or "nvidia/nemotron-3-super-120b-a12b")).strip()
     elif node_type == "recovery":
@@ -191,7 +191,7 @@ def get_llm_info() -> Dict[str, Any]:
         "configured_provider": "nvidia",
         "model": model_name,
         "active_model": model_name,
-        "supervisor_model": os.getenv("SUPERVISOR_MODEL", SUPERVISOR_MODEL or "nvidia/nemotron-3-nano-30b-a3b"),
+        "supervisor_model": os.getenv("SUPERVISOR_MODEL", SUPERVISOR_MODEL or "nvidia/nemotron-3-super-120b-a12b"),
         "aggregator_model": os.getenv("AGGREGATOR_MODEL", AGGREGATOR_MODEL or "nvidia/nemotron-3-super-120b-a12b"),
         "recovery_model": os.getenv("RECOVERY_MODEL", RECOVERY_MODEL or "nvidia/nemotron-3-super-120b-a12b"),
         "is_llm_active": active_llm is not None,

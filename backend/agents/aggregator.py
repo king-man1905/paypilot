@@ -12,6 +12,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 from backend.graph.state import PayPilotState
 from backend.agents.llm_factory import get_llm
+from backend.config import LLM_MAX_RETRIES
 from backend.observability.tracing import trace_span
 
 logger = logging.getLogger(__name__)
@@ -243,7 +244,13 @@ def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
         health = evidence["revenue"].get("business_health", {})
         if isinstance(health, dict):
             aggregated_summary["key_facts"]["total_revenue_inr"] = health.get("total_realized_revenue_inr")
+            # "recoverable_opportunity_inr" kept for backward compatibility. It is a conservative,
+            # technical-loss-based estimate (see get_revenue_lost_by_failure), distinct from
+            # estimated_recovery.estimated_recovery_from_prioritized_actions_inr in the final response,
+            # which sums the individual P1-P4 ranked action impacts. Both are model estimates, not
+            # confirmed/actual recovered revenue.
             aggregated_summary["key_facts"]["recoverable_opportunity_inr"] = health.get("recoverable_opportunity_inr")
+            aggregated_summary["key_facts"]["identified_recoverable_opportunity_inr"] = health.get("recoverable_opportunity_inr")
 
     if "payment" in evidence and isinstance(evidence["payment"], dict):
         pay = evidence["payment"]
@@ -288,7 +295,7 @@ def evidence_aggregator_node(state: PayPilotState) -> PayPilotState:
                         HumanMessage(content=prompt_content),
                     ])
 
-                res = execute_with_retry(_call_synthesis, max_retries=0, on_retry=lambda att, exc, d: record_retry())
+                res = execute_with_retry(_call_synthesis, max_retries=LLM_MAX_RETRIES, on_retry=lambda att, exc, d: record_retry())
                 lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
                 raw_text = getattr(res, "content", str(res)).strip()
                 text_answer = _clean_llm_synthesis(raw_text)

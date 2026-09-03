@@ -1,6 +1,10 @@
 /**
  * PayPilot Type-Safe API Client
- * Connects directly to existing FastAPI backend endpoints with graceful fallback to mock data
+ *
+ * Read-only telemetry endpoints (health/readiness/jobs list/audit/SLO/config) fall back to
+ * demo mock data when the backend is unreachable, since they only affect dashboard chrome.
+ * Result-bearing endpoints (analyze/submitJob/deployRecommendation) do NOT fall back to mock
+ * data — a failed request must surface as a visible error, never as a fabricated AI result.
  */
 
 import {
@@ -16,7 +20,6 @@ import {
   SLOResponseSchema,
 } from '../types/api';
 import {
-  MOCK_AI_ANALYSIS,
   MOCK_AUDIT_LOGS,
   MOCK_CONFIG_DIAGNOSTICS,
   MOCK_JOBS,
@@ -42,7 +45,9 @@ export const BASE_URL = getBaseUrl().replace(/\/+$/, '');
 
 class PayPilotApiClient {
   private getHeaders(customHeaders?: Record<string, string>): HeadersInit {
-    const apiKey = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_api_key')) || 'paypilot-prod-analyst-key';
+    // No hardcoded key fallback: an unconfigured key means an empty header, which the backend
+    // correctly rejects with 401 — never silently authenticate with a baked-in credential.
+    const apiKey = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_api_key')) || '';
     const clientId = (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_client_id')) || 'merchant_enterprise_01';
 
     return {
@@ -109,40 +114,31 @@ class PayPilotApiClient {
   }
 
   /**
-   * Real-Time Synchronous Multi-Agent Analysis
+   * Real-Time Synchronous Multi-Agent Analysis.
+   *
+   * Intentionally does NOT catch-and-fall-back to mock data: a failed/unreachable backend
+   * must surface as a visible error to the caller, never as a silently substituted fake
+   * analysis result (see IntelligencePage's error state handling).
    */
   async analyze(query: string): Promise<AnalyzeResponse> {
-    try {
-      const res = await fetch(`${BASE_URL}/api/v1/analyze`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ query: query.trim() }),
-      });
+    const res = await fetch(`${BASE_URL}/api/v1/analyze`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ query: query.trim() }),
+    });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Analysis failed: ${res.statusText}`);
-      }
-
-      return await res.json();
-    } catch (err: any) {
-      console.warn('Backend /api/v1/analyze unavailable, serving high-fidelity simulated response:', err);
-      // Simulate real latency
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      return {
-        ...MOCK_AI_ANALYSIS,
-        query,
-        execution_metadata: {
-          ...MOCK_AI_ANALYSIS.execution_metadata,
-          query,
-          timestamp: new Date().toISOString(),
-        },
-      };
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Analysis failed: ${res.statusText}`);
     }
+
+    return await res.json();
   }
 
   /**
-   * Submit Asynchronous Background Analysis / Deployment Job
+   * Submit Asynchronous Background Analysis / Deployment Job.
+   *
+   * Intentionally does NOT fall back to a fabricated local job on failure — see analyze().
    */
   async submitJob(
     query: string,
@@ -155,47 +151,31 @@ class PayPilotApiClient {
       customHeaders['Idempotency-Key'] = idempotencyKey;
     }
 
-    try {
-      const res = await fetch(`${BASE_URL}/api/v1/jobs`, {
-        method: 'POST',
-        headers: this.getHeaders(customHeaders),
-        body: JSON.stringify({
-          query: query.trim(),
-          task_type: taskType,
-          ...(metadata ? { metadata } : {}),
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Job submission failed: ${res.statusText}`);
-      }
-
-      return await res.json();
-    } catch (err: any) {
-      console.warn('Backend /api/v1/jobs unavailable, creating local simulated job:', err);
-      const newJob: JobResponse = {
-        job_id: `job_${Math.random().toString(16).substring(2, 14)}`,
+    const res = await fetch(`${BASE_URL}/api/v1/jobs`, {
+      method: 'POST',
+      headers: this.getHeaders(customHeaders),
+      body: JSON.stringify({
+        query: query.trim(),
         task_type: taskType,
-        client_id: (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_client_id')) || 'merchant_enterprise_01',
-        role: 'analyst',
-        status: 'completed',
-        created_at: new Date().toISOString(),
-        started_at: new Date().toISOString(),
-        completed_at: new Date(Date.now() + 1500).toISOString(),
-        duration_ms: 1450.2,
-        query_summary: query.slice(0, 60),
-        result: {
-          ...MOCK_AI_ANALYSIS,
-          query,
-        },
-      };
-      return newJob;
+        ...(metadata ? { metadata } : {}),
+      }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Job submission failed: ${res.statusText}`);
     }
+
+    return await res.json();
   }
 
   /**
-   * Deploy Automated Revenue Recovery Recommendation
+   * Deploy Automated Revenue Recovery Recommendation.
+   *
+   * Falls back from the dedicated /api/v1/recommendations/deploy route to /api/v1/jobs only on
+   * a 404 (older backend revision without the dedicated route) — that is a real, intentional
+   * compatibility path. It does NOT fall back to a fabricated "success" response on network or
+   * server failure: a deployment that never reached the backend must not be reported as enqueued.
    */
   async deployRecommendation(
     item: PrioritizedActionItem,
@@ -208,77 +188,56 @@ class PayPilotApiClient {
       `idemp_deploy_${item.rank}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     customHeaders['Idempotency-Key'] = idemp;
 
-    try {
-      // 1. Try dedicated recommendations deployment endpoint
-      const res = await fetch(`${BASE_URL}/api/v1/recommendations/deploy`, {
-        method: 'POST',
-        headers: this.getHeaders(customHeaders),
-        body: JSON.stringify({
+    // 1. Try dedicated recommendations deployment endpoint
+    const res = await fetch(`${BASE_URL}/api/v1/recommendations/deploy`, {
+      method: 'POST',
+      headers: this.getHeaders(customHeaders),
+      body: JSON.stringify({
+        action_rank: item.rank,
+        action_title: item.action,
+        affected_area: item.affected_area,
+        estimated_revenue_impact_inr: item.estimated_revenue_impact_inr,
+        parameters: parameters || {},
+      }),
+    });
+
+    if (res.ok) {
+      return (await res.json()) as DeployRecommendationResponse;
+    }
+
+    // 2. If 404 (remote server running earlier revision without dedicated route), fall back to /api/v1/jobs
+    if (res.status === 404) {
+      const deploymentQuery = `Deploy recommendation P${item.rank}: ${item.action}`;
+      const job = await this.submitJob(
+        deploymentQuery,
+        idemp,
+        'action_deployment',
+        {
           action_rank: item.rank,
           action_title: item.action,
           affected_area: item.affected_area,
           estimated_revenue_impact_inr: item.estimated_revenue_impact_inr,
-          parameters: parameters || {},
-        }),
-      });
+          ...(parameters || {}),
+        }
+      );
 
-      if (res.ok) {
-        return (await res.json()) as DeployRecommendationResponse;
-      }
-
-      // 2. If 404 (remote server running earlier revision without dedicated route), fall back to /api/v1/jobs
-      if (res.status === 404) {
-        const deploymentQuery = `Deploy recommendation P${item.rank}: ${item.action}`;
-        const job = await this.submitJob(
-          deploymentQuery,
-          idemp,
-          'action_deployment',
-          {
-            action_rank: item.rank,
-            action_title: item.action,
-            affected_area: item.affected_area,
-            estimated_revenue_impact_inr: item.estimated_revenue_impact_inr,
-            ...(parameters || {}),
-          }
-        );
-
-        return {
-          deployment_id: `dep_${job.job_id.replace(/^job_/, '')}`,
-          job_id: job.job_id,
-          action_rank: item.rank,
-          action_title: item.action,
-          status: job.status,
-          enqueued_at: job.created_at,
-          client_id: job.client_id,
-          role: job.role,
-          estimated_revenue_impact_inr: item.estimated_revenue_impact_inr,
-          message: `Recommendation P${item.rank} (${item.action}) successfully enqueued for automated rollout.`,
-          timestamp: new Date().toISOString(),
-        };
-      }
-
-      const errPayload = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(errPayload.detail || `Deployment failed with status ${res.status}`);
-    } catch (err: any) {
-      console.warn('Backend /api/v1/recommendations/deploy unavailable, creating simulated deployment:', err);
-      const simulatedDeploymentId = `dep_${Math.random().toString(16).substring(2, 10)}`;
-      const simulatedJobId = `job_${Math.random().toString(16).substring(2, 10)}`;
       return {
-        deployment_id: simulatedDeploymentId,
-        job_id: simulatedJobId,
+        deployment_id: `dep_${job.job_id.replace(/^job_/, '')}`,
+        job_id: job.job_id,
         action_rank: item.rank,
         action_title: item.action,
-        status: 'enqueued',
-        enqueued_at: new Date().toISOString(),
-        client_id:
-          (typeof localStorage !== 'undefined' && localStorage.getItem('paypilot_client_id')) ||
-          'merchant_enterprise_01',
-        role: 'analyst',
+        status: job.status,
+        enqueued_at: job.created_at,
+        client_id: job.client_id,
+        role: job.role,
         estimated_revenue_impact_inr: item.estimated_revenue_impact_inr,
         message: `Recommendation P${item.rank} (${item.action}) successfully enqueued for automated rollout.`,
         timestamp: new Date().toISOString(),
       };
     }
+
+    const errPayload = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(errPayload.detail || `Deployment failed with status ${res.status}`);
   }
 
   /**

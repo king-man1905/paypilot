@@ -88,7 +88,7 @@ describe('PayPilot Application End-to-End Screen Verification', () => {
     expect(screen.getByText('Completed Order')).toBeInTheDocument();
   });
 
-  it('4. AI Intelligence Center: Executes Multi-Agent inquiry, displays Executive Brief and Ranked P1-P3 Actions', async () => {
+  it('4. AI Intelligence Center: Shows an honest empty state on load, and a visible error (never fake data) when the backend is unreachable', async () => {
     render(<App />);
 
     // Navigate to AI Intelligence Center
@@ -104,27 +104,19 @@ describe('PayPilot Application End-to-End Screen Verification', () => {
     expect(screen.getByText('Real-Time Sync')).toBeInTheDocument();
     expect(screen.getByText('Async Job Queue')).toBeInTheDocument();
 
-    // Verify Executive Brief & Actions already rendered
-    expect(screen.getByText('Executive Synthesis & Decision Brief')).toBeInTheDocument();
-    expect(screen.getByText('Ranked Revenue Recovery Actions')).toBeInTheDocument();
-    // Verify Deploy Recommendation CTA click and state transition
-    const deployButtons = screen.getAllByRole('button', { name: /Deploy Recommendation/i });
-    expect(deployButtons.length).toBeGreaterThan(0);
-    fireEvent.click(deployButtons[0]);
+    // No query has run yet: must show the honest empty state, not a pre-seeded fake brief.
+    expect(screen.getByText('No analysis yet')).toBeInTheDocument();
+    expect(screen.queryByText('Executive Synthesis & Decision Brief')).not.toBeInTheDocument();
+
+    // Running the pipeline against the (unreachable, in this offline test environment) backend
+    // must surface a visible error — never silently swap in mock data as if it were real.
+    const runButton = screen.getByRole('button', { name: /Execute Multi-Agent Pipeline/i });
+    fireEvent.click(runButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/enqueued for automated rollout/i)
-      ).toBeInTheDocument();
-      expect(screen.getByText(/Recommendation Deployed/i)).toBeInTheDocument();
+      expect(screen.getByText('Analysis failed')).toBeInTheDocument();
     });
-
-    // Verify Specialist Evidence Tabs
-    expect(screen.getByText('Deterministic Evidence Ledger')).toBeInTheDocument();
-    expect(screen.getByText('Revenue Agent')).toBeInTheDocument();
-    expect(screen.getByText('Payment Gateway Agent')).toBeInTheDocument();
-    expect(screen.getByText('Checkout Funnel Agent')).toBeInTheDocument();
-    expect(screen.getByText('Customer & Refund Agent')).toBeInTheDocument();
+    expect(screen.queryByText('Executive Synthesis & Decision Brief')).not.toBeInTheDocument();
   });
 
   it('5. Audit & Security Screen: Displays SLO status, compliance log, and event detail drawer', async () => {
@@ -169,10 +161,13 @@ describe('PayPilot Application End-to-End Screen Verification', () => {
     expect(screen.getByText('British Pound')).toBeInTheDocument();
     expect(screen.getByText('Japanese Yen')).toBeInTheDocument();
 
-    // API Key section
+    // API Key section — field is editable (paste the real backend-configured key), not a
+    // client-side "Roll Key" generator that could never match the server's actual credential.
     expect(screen.getByText('API Key & Tenant Identity')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Copy/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Roll Key/i })).toBeInTheDocument();
+    const apiKeyInput = screen.getByPlaceholderText('Paste your PayPilot API key');
+    fireEvent.change(apiKeyInput, { target: { value: 'test-new-key-456' } });
+    expect((apiKeyInput as HTMLInputElement).value).toBe('test-new-key-456');
 
     // Quotas & Team
     expect(screen.getByText('Tenant Quota & Rate Limit Utilization')).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { apiClient, BASE_URL } from '../api/client';
 
 const BACKEND_URL =
@@ -7,9 +7,17 @@ const BACKEND_URL =
   BASE_URL ||
   'https://paypilot-pjye.onrender.com';
 
+// No hardcoded key: the old committed value is permanently compromised. A real key is only
+// ever supplied at test-run time via env var — never baked into source. Tests that require
+// authentication skip gracefully when it isn't provided (see canTestAuthenticated below).
+const TEST_API_KEY =
+  (typeof process !== 'undefined' && process.env.PAYPILOT_TEST_API_KEY) ||
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TEST_API_KEY) ||
+  '';
+
 const HEADERS = {
   'Content-Type': 'application/json',
-  'X-API-Key': 'paypilot-prod-analyst-key',
+  'X-API-Key': TEST_API_KEY,
   'X-Client-ID': 'merchant_enterprise_01',
 };
 
@@ -31,16 +39,55 @@ describe('API Client Unit & Fallback Capabilities', () => {
     expect(readiness.checks.dataset_accessible).toBe(true);
   });
 
-  it('Gracefully handles analyze query with high-fidelity fallback', async () => {
-    const res = await apiClient.analyze('Why did my revenue decrease?');
-    expect(res.query).toBe('Why did my revenue decrease?');
-    expect(res.intent).toBeDefined();
-    expect(res.prioritized_actions.length).toBeGreaterThan(0);
+  it('Throws a visible error from analyze() when the backend is unreachable — must NOT silently return fake mock data', async () => {
+    // Regression test for the removed silent-mock-fallback anti-pattern: a failed/unreachable
+    // backend must surface as a rejected promise, never as a fabricated "successful" analysis.
+    await expect(apiClient.analyze('Why did my revenue decrease?')).rejects.toThrow();
+  });
+
+  it('Sends whatever key is configured in localStorage as X-API-Key — no hardcoded fallback', async () => {
+    // Regression test for the removed hardcoded key fallback: the header must reflect exactly
+    // what the user configured (via Settings), never a value baked into source.
+    const configuredKey = 'test-configured-key-abc123';
+    localStorage.setItem('paypilot_api_key', configuredKey);
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    try {
+      await apiClient.analyze('test query').catch(() => {});
+      const call = fetchSpy.mock.calls.find(([url]) => String(url).includes('/api/v1/analyze'));
+      expect(call).toBeDefined();
+      const [, init] = call!;
+      const headers = init?.headers as Record<string, string>;
+      expect(headers['X-API-Key']).toBe(configuredKey);
+    } finally {
+      fetchSpy.mockRestore();
+      localStorage.removeItem('paypilot_api_key');
+    }
+  });
+
+  it('Sends an empty X-API-Key (never a hardcoded credential) when no key is configured', async () => {
+    localStorage.removeItem('paypilot_api_key');
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    try {
+      await apiClient.analyze('test query').catch(() => {});
+      const call = fetchSpy.mock.calls.find(([url]) => String(url).includes('/api/v1/analyze'));
+      expect(call).toBeDefined();
+      const [, init] = call!;
+      const headers = init?.headers as Record<string, string>;
+      expect(headers['X-API-Key']).toBe('');
+      expect(headers['X-API-Key']).not.toContain('paypilot-prod');
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 });
 
 describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   let isBackendLive = false;
+  // Authenticated endpoints require a real key supplied via env var (see TEST_API_KEY above) —
+  // without one, this suite can prove the backend is reachable but not exercise auth'd routes.
+  const canTestAuthenticated = () => isBackendLive && !!TEST_API_KEY;
 
   beforeAll(async () => {
     try {
@@ -85,7 +132,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   it(
     '3. POST /api/v1/analyze executes synchronous multi-agent analysis',
     async (ctx) => {
-      if (!isBackendLive) {
+      if (!canTestAuthenticated()) {
         ctx.skip();
         return;
       }
@@ -106,7 +153,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   );
 
   it('4. POST /api/v1/jobs submits background analysis task', async (ctx) => {
-    if (!isBackendLive) {
+    if (!canTestAuthenticated()) {
       ctx.skip();
       return;
     }
@@ -125,7 +172,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   }, 60000);
 
   it('5. GET /admin/slo returns operational SLO targets', async (ctx) => {
-    if (!isBackendLive) {
+    if (!canTestAuthenticated()) {
       ctx.skip();
       return;
     }
@@ -139,7 +186,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   }, 60000);
 
   it('6. GET /admin/audit returns paginated audit log events', async (ctx) => {
-    if (!isBackendLive) {
+    if (!canTestAuthenticated()) {
       ctx.skip();
       return;
     }
@@ -153,7 +200,7 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   }, 60000);
 
   it('7. GET /admin/config returns sanitized configuration snapshot without secret leakage', async (ctx) => {
-    if (!isBackendLive) {
+    if (!canTestAuthenticated()) {
       ctx.skip();
       return;
     }
@@ -168,7 +215,13 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
   }, 60000);
 
   it('8. apiClient.deployRecommendation dispatches recovery action deployment', async (ctx) => {
-    if (!isBackendLive) {
+    // apiClient resolves its own BASE_URL to a relative path in this jsdom harness, and
+    // relative fetches are always intercepted by the global test fetch mock (tests/setup.ts) —
+    // so apiClient itself can never reach the real backend from inside this suite, even though
+    // isBackendLive (a separate absolute-URL probe) may be true. Skip rather than assert against
+    // the mock's fixed response. (Previously masked by deployRecommendation's removed silent
+    // mock-fallback, which made this test's assertions pass vacuously regardless.)
+    if (!isBackendLive || !BASE_URL) {
       ctx.skip();
       return;
     }
@@ -194,7 +247,9 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
     expect(res.message).toBeDefined();
   }, 60000);
 
-  it('9. apiClient.deployRecommendation works with simulated fallback when offline', async () => {
+  it('9. apiClient.deployRecommendation throws when the backend is unreachable — must NOT silently report a fake "enqueued" deployment', async () => {
+    // Regression test: reporting a deployment as "enqueued" when it never reached the backend
+    // would mislead a merchant into believing an action was queued when nothing happened.
     const mockItem = {
       rank: 1,
       action: 'Implement Dynamic Multi-Gateway Failover Routing for UPI',
@@ -209,11 +264,8 @@ describe('Live FastAPI Backend Contracts & Response Integrity', () => {
       reasoning: 'Routing around failed gateway recovers transaction flow.',
     };
 
-    const res = await apiClient.deployRecommendation(mockItem, 'test_client_deploy_fallback');
-    expect(res.deployment_id).toBeDefined();
-    expect(res.job_id).toBeDefined();
-    expect(res.action_rank).toBe(1);
-    expect(res.status).toBe('enqueued');
-    expect(res.message).toBeDefined();
+    await expect(
+      apiClient.deployRecommendation(mockItem, 'test_client_deploy_fallback')
+    ).rejects.toThrow();
   });
 });

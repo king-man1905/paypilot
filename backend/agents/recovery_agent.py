@@ -15,6 +15,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 from backend.graph.state import PayPilotState
 from backend.agents.llm_factory import get_llm
+from backend.config import LLM_MAX_RETRIES
 from backend.observability.tracing import trace_span
 from backend.tools.analytics import (
     get_what_if_success_rate,
@@ -324,7 +325,7 @@ def generate_candidate_recovery_actions(
         worst_rate = worst_method.get("failure_rate_pct", 0.0)
         method_perf = pay.get("payment_methods", {})
         worst_stats = method_perf.get(worst_name, {})
-        worst_lost_val = worst_stats.get("failed_amount", worst_stats.get("lost_revenue", 0.0))
+        worst_lost_val = worst_stats.get("lost_failed_value", 0.0)
 
         if worst_rate >= 15.0 and worst_lost_val > 0:
             rec_impact = round(worst_lost_val * 0.30, 2)
@@ -685,17 +686,33 @@ def recovery_agent_node(state: PayPilotState) -> PayPilotState:
         state["prioritized_actions"] = prioritized
         state["recommendations"] = prioritized
 
-        # Calculate aggregate estimated recoverable opportunity
+        # Calculate aggregate estimated recoverable opportunity.
+        # NOTE: two distinct, intentionally-different estimates are reported here — see "note" below.
         total_recoverable_impact = sum((float(a.get("estimated_revenue_impact_inr", 0.0)) for a in prioritized))
         sim_uplift_val = 0.0
-        if "revenue" in evidence:
+        identified_recoverable_inr = 0.0
+        if "revenue" in evidence and isinstance(evidence["revenue"], dict):
             sim = evidence["revenue"].get("what_if_simulation", {})
             sim_uplift_val = sim.get("estimated_additional_revenue_inr", 0.0)
+            business_health = evidence["revenue"].get("business_health", {})
+            if isinstance(business_health, dict):
+                identified_recoverable_inr = business_health.get("recoverable_opportunity_inr", 0.0) or 0.0
 
         state["estimated_recovery"] = {
+            # Sum of the individual estimated_revenue_impact_inr values behind the P1-P4 ranked
+            # actions below. Kept as "total_estimated_recoverable_inr" for backward compatibility.
             "total_estimated_recoverable_inr": round(total_recoverable_impact, 2),
+            "estimated_recovery_from_prioritized_actions_inr": round(total_recoverable_impact, 2),
+            # Conservative estimate: 70% of technical (timeout/gateway) transaction losses only.
+            # Computed independently of the ranked-action total above — the two are different
+            # definitions by design, not a discrepancy.
+            "identified_recoverable_opportunity_inr": round(identified_recoverable_inr, 2),
             "total_actions_identified": len(prioritized),
             "simulated_uplift_inr": round(sim_uplift_val, 2),
+            "note": (
+                "All figures above are model-estimated recoverable amounts based on historical "
+                "transaction patterns. They are projections, not confirmed or actual recovered revenue."
+            ),
         }
 
         # 3. Generate Executive Synthesis using NVIDIA LLM or Deterministic Fallback
@@ -735,7 +752,7 @@ def recovery_agent_node(state: PayPilotState) -> PayPilotState:
                             HumanMessage(content=prompt_content),
                         ])
 
-                    res = execute_with_retry(_call_recovery, max_retries=0, on_retry=lambda att, exc, d: record_retry())
+                    res = execute_with_retry(_call_recovery, max_retries=LLM_MAX_RETRIES, on_retry=lambda att, exc, d: record_retry())
                     lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
                     raw_content = getattr(res, "content", str(res)).strip()
                     content = _clean_llm_synthesis(raw_content)

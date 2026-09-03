@@ -20,6 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from backend.api.routes import router
 from backend.api.schemas import ErrorResponse
 from backend.config import (
+    CORS_ALLOWED_ORIGINS,
     FASTAPI_HOST,
     FASTAPI_PORT,
     MAX_CONCURRENT_REQUESTS,
@@ -155,10 +156,10 @@ app = FastAPI(
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
-# 2. CORS Middleware
+# 2. CORS Middleware — explicit origin allowlist (see CORS_ALLOWED_ORIGINS in backend/config.py)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

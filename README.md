@@ -35,6 +35,14 @@ Modern e-commerce and fintech merchants lose between **3% to 8% of gross revenue
 
 PayPilot solves this by combining **deterministic analytical tools** with an **orchestrated multi-agent LangGraph pipeline** powered by **NVIDIA Nemotron LLMs**.
 
+> **What this is and isn't:** PayPilot detects revenue-at-risk, computes deterministic financial
+> attribution, and generates prioritized, INR-quantified recovery *recommendations*. It does
+> **not** modify live payment gateway or checkout infrastructure, and "deploying" a
+> recommendation enqueues a tracked follow-up task — it is not an automated payment-side
+> intervention. All recoverable/recovery figures throughout this system (and this document) are
+> **model-estimated projections based on historical transaction patterns, not confirmed or
+> actual recovered revenue.** The dataset is synthetic (see Environment Variables below).
+
 ---
 
 ## Key Capabilities
@@ -42,10 +50,12 @@ PayPilot solves this by combining **deterministic analytical tools** with an **o
 - **Deterministic Specialist Diagnostics**: Four dedicated analytical nodes compute exact revenue metrics, payment failure rates, device conversion gaps, and refund statistics from transactional data.
 - **Strict Separation of Math and Language**: All calculations and rankings are computed deterministically in Python. LLMs synthesize and format natural language reports without hallucinating numbers.
 - **Multi-Factor Action Prioritization**: Ranks actionable recommendations into P1–P4 tiers using an objective mathematical scoring formula factoring in Recoverable Impact, Statistical Confidence, Operational Urgency, and Implementation Effort.
-- **Tiered Model Routing**:
-  - **Supervisor / Router**: `nvidia/nemotron-3-nano-30b-a3b` for fast, lightweight intent classification.
-  - **Evidence Aggregator**: `nvidia/nemotron-3-super-120b-a12b` for deep cross-functional synthesis.
-  - **Recovery Engine**: `nvidia/nemotron-3-super-120b-a12b` for executive decision framing.
+- **Shared-Tier Model Routing**: Supervisor, Evidence Aggregator, and Recovery Engine all currently
+  route to `nvidia/nemotron-3-super-120b-a12b`. The Supervisor previously used a smaller/faster
+  `nemotron-3-nano-30b-a3b` model, which NVIDIA retired (EOL 2026-09-01); it was consolidated
+  onto the same already-verified model tier rather than an unverified replacement. Each node still
+  routes independently via `SUPERVISOR_MODEL` / `AGGREGATOR_MODEL` / `RECOVERY_MODEL`, so a
+  smaller model can be reinstated for the Supervisor at any time via configuration alone.
 - **Robust Multi-Layer Guardrails**: Comprehensive sanitization filters out `<think>` tags, system prompt leakage, placeholder text, and truncated reports with automated fallback to deterministic synthesis.
 - **Enterprise-Grade Observability**: Distributed tracing (`trace_span`), node-level model telemetry (`node_models`), SLO tracking (P95 latency, error budgets), and audit logging.
 - **Traffic Control & Security**: API key authentication, sliding-window rate limiting, tenant daily quotas, and idempotency key locking (`Idempotency-Key`).
@@ -77,7 +87,7 @@ PayPilot solves this by combining **deterministic analytical tools** with an **o
 |                                            v                                                       |
 |                         +-------------------------------------+                                    |
 |                         |          Supervisor Node            |                                    |
-|                         | (nvidia/nemotron-3-nano-30b-a3b)    |                                    |
+|                         | (nvidia/nemotron-3-super-120b-a12b)    |                                    |
 |                         +------------------+------------------+                                    |
 |                                            |                                                       |
 |                   +------------------------+------------------------+                              |
@@ -183,7 +193,7 @@ Each specialist agent checks `state["required_agents"]`. If the supervisor did n
 
 ### 1. Supervisor Agent (`backend/agents/supervisor.py`)
 - **Role**: Dispatches specialist agents and classifies merchant intent.
-- **Model**: `nvidia/nemotron-3-nano-30b-a3b`
+- **Model**: `nvidia/nemotron-3-super-120b-a12b`
 - **Reliability Architecture**:
   - *Stage 1*: NVIDIA Structured Output (`SupervisorDecision` Pydantic schema).
   - *Stage 2*: NVIDIA JSON text-prompt extraction fallback.
@@ -236,7 +246,7 @@ Each specialist agent checks `state["required_agents"]`. If the supervisor did n
 | **Financial Calculations** | Python Analytics Engine | `backend/tools/analytics.py` | 100% deterministic; zero math errors |
 | **Metric Aggregations** | Specialist Agent Nodes | Pandas & Polars-optimized vector operations | No hallucinated financial numbers |
 | **Action Prioritization** | Recovery Engine | Deterministic scoring formula (0–100) | Fully reproducible ranking (P1–P4) |
-| **Intent Classification** | Supervisor Node | `nvidia/nemotron-3-nano-30b-a3b` + Rule Fallback | Fast routing with graceful degradation |
+| **Intent Classification** | Supervisor Node | `nvidia/nemotron-3-super-120b-a12b` + Rule Fallback | Fast routing with graceful degradation |
 | **Executive Synthesis** | Aggregator & Recovery | `nvidia/nemotron-3-super-120b-a12b` | Natural language business framing |
 
 ---
@@ -266,7 +276,7 @@ PayPilot includes built-in observability modules:
 - **Node-Level Model Telemetry (`node_models`)**: Every API response reports the exact LLM utilized on each node:
   ```json
   "node_models": {
-    "supervisor": "nvidia/nemotron-3-nano-30b-a3b",
+    "supervisor": "nvidia/nemotron-3-super-120b-a12b",
     "aggregator": "nvidia/nemotron-3-super-120b-a12b",
     "recovery": "nvidia/nemotron-3-super-120b-a12b"
   }
@@ -321,6 +331,12 @@ Readiness probe verifying subsystem availability.
 
 ### 3. `POST /api/v1/analyze`
 Executes synchronous multi-agent revenue diagnostic and recovery prioritization.
+
+> The `estimated_recovery` object below carries two distinct, separately-labeled figures —
+> `estimated_recovery_from_prioritized_actions_inr` (sum of the P1–P4 ranked actions) and
+> `identified_recoverable_opportunity_inr` (a conservative technical-loss-only estimate) — plus a
+> `note` field stating both are projections, not actual recovered revenue. The example response
+> below predates this change and shows the legacy field names for illustration.
 
 **Request**:
 ```json
@@ -427,7 +443,7 @@ Executes synchronous multi-agent revenue diagnostic and recovery prioritization.
   "llm_provider": "nvidia",
   "model": "nvidia/nemotron-3-super-120b-a12b",
   "node_models": {
-    "supervisor": "nvidia/nemotron-3-nano-30b-a3b",
+    "supervisor": "nvidia/nemotron-3-super-120b-a12b",
     "aggregator": "nvidia/nemotron-3-super-120b-a12b",
     "recovery": "nvidia/nemotron-3-super-120b-a12b"
   },
@@ -448,7 +464,7 @@ Executes synchronous multi-agent revenue diagnostic and recovery prioritization.
     "llm_provider": "nvidia",
     "model": "nvidia/nemotron-3-super-120b-a12b",
     "node_models": {
-      "supervisor": "nvidia/nemotron-3-nano-30b-a3b",
+      "supervisor": "nvidia/nemotron-3-super-120b-a12b",
       "aggregator": "nvidia/nemotron-3-super-120b-a12b",
       "recovery": "nvidia/nemotron-3-super-120b-a12b"
     },
@@ -473,7 +489,7 @@ LLM_PROVIDER=nvidia
 NVIDIA_API_KEY=your_nvidia_api_key_here
 NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
 NVIDIA_MODEL=nvidia/nemotron-3-super-120b-a12b
-SUPERVISOR_MODEL=nvidia/nemotron-3-nano-30b-a3b
+SUPERVISOR_MODEL=nvidia/nemotron-3-super-120b-a12b
 AGGREGATOR_MODEL=nvidia/nemotron-3-super-120b-a12b
 RECOVERY_MODEL=nvidia/nemotron-3-super-120b-a12b
 LLM_REQUEST_TIMEOUT=60.0
@@ -491,8 +507,8 @@ DATA_SEED=42
 # Security, Authentication & Rate Limiting
 # ============================================================================
 REQUIRE_AUTH=false
-PAYPILOT_API_KEY=paypilot-prod-analyst-key
-PAYPILOT_ADMIN_KEY=paypilot-prod-admin-key
+PAYPILOT_API_KEY=your_paypilot_analyst_api_key_here
+PAYPILOT_ADMIN_KEY=your_paypilot_admin_api_key_here
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_REQUESTS=60
 RATE_LIMIT_WINDOW_SECONDS=60
@@ -653,7 +669,7 @@ Deterministic tool and agent node latencies are from **local profiling benchmark
 | **Deterministic Specialist Pipeline** | Revenue, Payment, Checkout, Customer nodes | **~292 ms** total wall-clock time | Local benchmark |
 | **Single Analytical Query** | `get_payment_success_rate` / `get_refund_rate` | **0.7 ms – 5.0 ms** | Local benchmark |
 | **Complex Funnel Breakdown** | `get_conversion_by_device` / `get_business_health` | **15 ms – 32 ms** | Local benchmark |
-| **Supervisor Intent Classification** | `nvidia/nemotron-3-nano-30b-a3b` | **~4.6 s** | Live NVIDIA API |
+| **Supervisor Intent Classification** | `nvidia/nemotron-3-super-120b-a12b` | **~4.6 s** | Live NVIDIA API |
 | **Aggregator Evidence Synthesis** | `nvidia/nemotron-3-super-120b-a12b` | **~28.0 s – 32.0 s** | Live NVIDIA API |
 | **Full Live E2E Pipeline** | Complete end-to-end (all agents + LLM synthesis) | **~35.9 s** | Live production (`POST /api/v1/analyze`) |
 | **Cold Deterministic Fallback Run** | Complete end-to-end pipeline (no LLM) | **< 300 ms** (P95) | Local benchmark |

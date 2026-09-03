@@ -10,6 +10,7 @@ Verifies:
 """
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -25,6 +26,11 @@ from backend.api.main import app
 from backend.tools.analytics import load_transaction_data
 
 PROD_BACKEND_URL = "https://paypilot-pjye.onrender.com"
+
+# No hardcoded key: the previously committed value is permanently compromised. Set
+# PAYPILOT_API_KEY in the environment before running this script; auth checks are skipped
+# (not silently passed) when it isn't provided.
+SIGNOFF_API_KEY = os.environ.get("PAYPILOT_API_KEY", "")
 
 def test_local_engine():
     print("\n=================================================================")
@@ -60,41 +66,45 @@ def test_local_engine():
     )
     print(f"  • OPTIONS /api/v1/analyze (CORS Preflight) : {res_cors.status_code} OK")
 
-    # 5. POST /api/v1/analyze
-    query = "Why did my revenue decrease and where is my biggest revenue leakage?"
-    t0 = time.perf_counter()
-    res_analyze = client.post(
-        "/api/v1/analyze",
-        json={"query": query},
-        headers={"X-API-Key": "paypilot-prod-analyst-key", "X-Client-ID": "merchant_enterprise_01"}
-    )
-    dur = (time.perf_counter() - t0) * 1000.0
-    assert res_analyze.status_code == 200, f"Analyze failed: {res_analyze.status_code} - {res_analyze.text}"
-    data = res_analyze.json()
+    # 5. POST /api/v1/analyze (requires PAYPILOT_API_KEY in the environment)
+    data = None
+    if not SIGNOFF_API_KEY:
+        print("  ⚠ PAYPILOT_API_KEY not set in environment — skipping authenticated /api/v1/analyze check.")
+    else:
+        query = "Why did my revenue decrease and where is my biggest revenue leakage?"
+        t0 = time.perf_counter()
+        res_analyze = client.post(
+            "/api/v1/analyze",
+            json={"query": query},
+            headers={"X-API-Key": SIGNOFF_API_KEY, "X-Client-ID": "merchant_enterprise_01"}
+        )
+        dur = (time.perf_counter() - t0) * 1000.0
+        assert res_analyze.status_code == 200, f"Analyze failed: {res_analyze.status_code} - {res_analyze.text}"
+        data = res_analyze.json()
 
-    print(f"  • POST /api/v1/analyze : 200 OK ({dur:.2f}ms)")
-    print(f"    - Detected Intent     : {data.get('intent')}")
-    print(f"    - Agents Participated : {data.get('agents_participated')}")
-    print(f"    - Total Recoverable   : INR {data.get('estimated_recovery', {}).get('total_estimated_recoverable_inr'):,.2f}")
+        print(f"  • POST /api/v1/analyze : 200 OK ({dur:.2f}ms)")
+        print(f"    - Detected Intent     : {data.get('intent')}")
+        print(f"    - Agents Participated : {data.get('agents_participated')}")
+        print(f"    - Total Recoverable   : INR {data.get('estimated_recovery', {}).get('total_estimated_recoverable_inr'):,.2f}")
 
-    actions = data.get("prioritized_actions", [])
-    print(f"    - Prioritized Actions : {len(actions)} ranked actions generated")
+        actions = data.get("prioritized_actions", [])
+        print(f"    - Prioritized Actions : {len(actions)} ranked actions generated")
 
-    ranks = [a.get("rank") for a in actions]
-    assert 1 in ranks, "Missing P1 (Rank 1) action!"
-    for act in actions:
-        p_label = f"P{act.get('rank')}"
-        print(f"      [{p_label}] Rank {act.get('rank')}: {act.get('action')}")
-        print(f"          Area: {act.get('affected_area')} | Score: {act.get('priority_score')} | Impact: INR {act.get('estimated_revenue_impact_inr'):,.2f} | Effort: {act.get('effort')}")
+        ranks = [a.get("rank") for a in actions]
+        assert 1 in ranks, "Missing P1 (Rank 1) action!"
+        for act in actions:
+            p_label = f"P{act.get('rank')}"
+            print(f"      [{p_label}] Rank {act.get('rank')}: {act.get('action')}")
+            print(f"          Area: {act.get('affected_area')} | Score: {act.get('priority_score')} | Impact: INR {act.get('estimated_revenue_impact_inr'):,.2f} | Effort: {act.get('effort')}")
 
-    meta = data.get("execution_metadata", {})
-    print(f"    - Observability Telemetry:")
-    print(f"      is_live_llm     : {meta.get('is_live_llm')}")
-    print(f"      llm_provider    : {meta.get('llm_provider')}")
-    print(f"      model           : {meta.get('model')}")
-    print(f"      node_models     : {meta.get('node_models')}")
+        meta = data.get("execution_metadata", {})
+        print(f"    - Observability Telemetry:")
+        print(f"      is_live_llm     : {meta.get('is_live_llm')}")
+        print(f"      llm_provider    : {meta.get('llm_provider')}")
+        print(f"      model           : {meta.get('model')}")
+        print(f"      node_models     : {meta.get('node_models')}")
 
-    # 6. Auth verification
+    # 6. Auth verification (does not require a real key — tests missing/invalid credentials)
     r_unauth = client.post("/api/v1/analyze", json={"query": "test"})
     # If auth required
     print(f"  • Auth check (unauthenticated) : status={r_unauth.status_code}")
@@ -109,9 +119,11 @@ def test_live_production_backend():
     print("\n=================================================================")
     print(f"     2. VERIFYING LIVE DEPLOYED BACKEND ({PROD_BACKEND_URL})     ")
     print("=================================================================")
+    if not SIGNOFF_API_KEY:
+        print("  ⚠ PAYPILOT_API_KEY not set in environment — authenticated checks below will 401 as expected.")
     headers = {
         "Content-Type": "application/json",
-        "X-API-Key": "paypilot-prod-analyst-key",
+        "X-API-Key": SIGNOFF_API_KEY,
         "X-Client-ID": "merchant_enterprise_01",
         "Origin": "https://paypilot.onrender.com",
     }

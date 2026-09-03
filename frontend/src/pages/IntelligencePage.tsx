@@ -13,13 +13,16 @@ import { Badge } from '../components/common/Badge';
 import { FormattedCurrency } from '../components/common/FormattedCurrency';
 import { apiClient } from '../api/client';
 import { AnalyzeResponse, JobResponse, PrioritizedActionItem } from '../types/api';
-import { MOCK_AI_ANALYSIS, MOCK_JOBS } from '../api/mockData';
+import { MOCK_JOBS } from '../api/mockData';
 
 export const IntelligencePage: React.FC = () => {
   const [query, setQuery] = useState('Why did my revenue decrease and where is my biggest drop-off?');
   const [executionMode, setExecutionMode] = useState<'sync' | 'async'>('sync');
   const [isLoading, setIsLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalyzeResponse | null>(MOCK_AI_ANALYSIS);
+  // Intentionally starts empty — no fake analysis is ever pre-seeded. A real result only
+  // appears here after a successful backend response (see handleRunAnalysis).
+  const [analysisResult, setAnalysisResult] = useState<AnalyzeResponse | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [jobs, setJobs] = useState<JobResponse[]>(MOCK_JOBS);
   const [activeEvidenceTab, setActiveEvidenceTab] = useState<'revenue' | 'payment' | 'checkout' | 'customer'>('revenue');
   const [deployingRank, setDeployingRank] = useState<number | null>(null);
@@ -36,6 +39,7 @@ export const IntelligencePage: React.FC = () => {
   const handleRunAnalysis = async () => {
     if (!query.trim()) return;
     setIsLoading(true);
+    setAnalysisError(null);
 
     try {
       if (executionMode === 'sync') {
@@ -49,8 +53,13 @@ export const IntelligencePage: React.FC = () => {
           setAnalysisResult(job.result as AnalyzeResponse);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error running analysis:', err);
+      // Surface the failure visibly — never silently keep showing stale or fake data as if
+      // this request succeeded.
+      setAnalysisError(
+        err?.message || 'Unable to reach the PayPilot backend. The analysis could not be completed.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -199,6 +208,28 @@ export const IntelligencePage: React.FC = () => {
         </div>
       </Card>
 
+      {/* Analysis Error State — visible, not silently masked with fake data */}
+      {analysisError && (
+        <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-900 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold">Analysis failed</p>
+            <p className="text-xs mt-0.5">{analysisError}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State — no query has been run yet, no fake analysis is shown */}
+      {!analysisResult && !isLoading && !analysisError && (
+        <Card className="p-10 text-center border-dashed">
+          <Bot className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-slate-600">No analysis yet</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Run a diagnostic query above to execute the multi-agent pipeline against live merchant data.
+          </p>
+        </Card>
+      )}
+
       {/* Analysis Results Display */}
       {analysisResult && (
         <div className="space-y-6">
@@ -240,25 +271,42 @@ export const IntelligencePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Metric Facts Summary Strip */}
+            {/* Metric Facts Summary Strip — real values only, honest "Unavailable" when absent */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
                 <span className="text-[11px] text-slate-400 block font-medium">Estimated Recoverable Pool</span>
-                <span className="text-lg font-extrabold text-emerald-400 font-mono">
-                  <FormattedCurrency amountInINR={analysisResult.estimated_recovery?.total_recoverable_inr || 6850000} />
-                </span>
+                {(() => {
+                  const rec = analysisResult.estimated_recovery?.estimated_recovery_from_prioritized_actions_inr
+                    ?? analysisResult.estimated_recovery?.total_estimated_recoverable_inr;
+                  return rec != null ? (
+                    <span className="text-lg font-extrabold text-emerald-400 font-mono">
+                      <FormattedCurrency amountInINR={rec} />
+                    </span>
+                  ) : (
+                    <span className="text-lg font-extrabold text-slate-500">Unavailable</span>
+                  );
+                })()}
               </div>
               <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
                 <span className="text-[11px] text-slate-400 block font-medium">Execution Pipeline Duration</span>
                 <span className="text-lg font-extrabold text-white font-mono">
-                  {analysisResult.execution_metadata?.execution_duration_ms || 142.5} ms
+                  {analysisResult.execution_metadata?.execution_duration_ms != null
+                    ? `${analysisResult.execution_metadata.execution_duration_ms} ms`
+                    : 'Unavailable'}
                 </span>
               </div>
               <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
                 <span className="text-[11px] text-slate-400 block font-medium">Primary Failure Factor</span>
-                <span className="text-sm font-extrabold text-amber-400">
-                  UPI Gateway Timeouts (79.4%)
-                </span>
+                {(() => {
+                  const worst = analysisResult.key_facts?.highest_failure_method;
+                  return worst?.method ? (
+                    <span className="text-sm font-extrabold text-amber-400">
+                      {worst.method} ({worst.failure_rate_pct}%)
+                    </span>
+                  ) : (
+                    <span className="text-sm font-extrabold text-slate-500">Unavailable</span>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -444,55 +492,84 @@ export const IntelligencePage: React.FC = () => {
               ))}
             </div>
 
-            {/* Tab Contents */}
+            {/* Tab Contents — sourced only from analysisResult; shows "Unavailable" rather than
+                inventing a number when the API response does not carry that field. */}
             <div className="text-xs space-y-3">
               {activeEvidenceTab === 'revenue' && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block font-medium">Total Gross Volume</span>
+                    <span className="text-slate-400 block font-medium">Total Realized Revenue</span>
                     <span className="text-sm font-bold text-slate-900">
-                      <FormattedCurrency amountInINR={84250000} />
+                      {analysisResult.key_facts?.total_revenue_inr != null ? (
+                        <FormattedCurrency amountInINR={analysisResult.key_facts.total_revenue_inr} />
+                      ) : (
+                        'Unavailable'
+                      )}
                     </span>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block font-medium">Realized Net Revenue</span>
+                    <span className="text-slate-400 block font-medium">Identified Recoverable Opportunity</span>
                     <span className="text-sm font-bold text-slate-900">
-                      <FormattedCurrency amountInINR={72455000} />
+                      {analysisResult.key_facts?.identified_recoverable_opportunity_inr != null ? (
+                        <FormattedCurrency amountInINR={analysisResult.key_facts.identified_recoverable_opportunity_inr} />
+                      ) : (
+                        'Unavailable'
+                      )}
                     </span>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block font-medium">Total Loss Metric</span>
-                    <span className="text-sm font-bold text-red-600">
-                      <FormattedCurrency amountInINR={11795000} />
-                    </span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">Estimated, not confirmed recovered revenue</span>
                   </div>
                 </div>
               )}
 
               {activeEvidenceTab === 'payment' && (
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <h4 className="font-bold text-slate-800 mb-2">Worst Performing Payment Rail</h4>
-                  <p className="text-slate-600 leading-relaxed">
-                    UPI failure rate reached <strong>20.6%</strong> (79.4% success). Primary root cause: <strong>GATEWAY_TIMEOUT (504)</strong> across 482 transactions causing INR 3,850,000 in uncaptured transactions.
-                  </p>
+                  <h4 className="font-bold text-slate-800 mb-2">Worst Performing Payment Method</h4>
+                  {analysisResult.key_facts?.highest_failure_method?.method ? (
+                    <p className="text-slate-600 leading-relaxed">
+                      <strong>{analysisResult.key_facts.highest_failure_method.method}</strong> has the
+                      highest failure rate at <strong>{analysisResult.key_facts.highest_failure_method.failure_rate_pct}%</strong>,
+                      with an overall payment success rate of{' '}
+                      {analysisResult.key_facts?.payment_success_rate_pct != null
+                        ? `${analysisResult.key_facts.payment_success_rate_pct}%`
+                        : 'an unavailable rate'}.
+                    </p>
+                  ) : (
+                    <p className="text-slate-400">Unavailable — no payment evidence returned for this query.</p>
+                  )}
                 </div>
               )}
 
               {activeEvidenceTab === 'checkout' && (
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <h4 className="font-bold text-slate-800 mb-2">Device Friction Differential</h4>
-                  <p className="text-slate-600 leading-relaxed">
-                    Mobile conversion rate is <strong>55.15%</strong> compared to Desktop conversion of <strong>73.75%</strong> (18.6% conversion gap). Abandonment peaks at Step 2 (Shipping Details).
-                  </p>
+                  <h4 className="font-bold text-slate-800 mb-2">Device Conversion Differential</h4>
+                  {analysisResult.key_facts?.mobile_conversion_rate_pct != null &&
+                  analysisResult.key_facts?.desktop_conversion_rate_pct != null ? (
+                    <p className="text-slate-600 leading-relaxed">
+                      Mobile conversion rate is <strong>{analysisResult.key_facts.mobile_conversion_rate_pct}%</strong> compared
+                      to Desktop conversion of <strong>{analysisResult.key_facts.desktop_conversion_rate_pct}%</strong> (
+                      {(analysisResult.key_facts.desktop_conversion_rate_pct - analysisResult.key_facts.mobile_conversion_rate_pct).toFixed(2)}
+                      {' '}point gap).
+                    </p>
+                  ) : (
+                    <p className="text-slate-400">Unavailable — no checkout evidence returned for this query.</p>
+                  )}
                 </div>
               )}
 
               {activeEvidenceTab === 'customer' && (
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                   <h4 className="font-bold text-slate-800 mb-2">Category Return Rate Anomaly</h4>
-                  <p className="text-slate-600 leading-relaxed">
-                    <strong>Fashion</strong> exhibits a 14.8% return rate, contributing INR 4,203,200 in refunded volume. Sizing mismatches account for 68% of refund requests.
-                  </p>
+                  {analysisResult.key_facts?.highest_refund_category?.category ? (
+                    <p className="text-slate-600 leading-relaxed">
+                      <strong>{analysisResult.key_facts.highest_refund_category.category}</strong> exhibits a{' '}
+                      <strong>{analysisResult.key_facts.highest_refund_category.refund_rate_pct}%</strong> refund rate
+                      {analysisResult.key_facts.highest_refund_category.refunded_orders_count != null && (
+                        <> across {analysisResult.key_facts.highest_refund_category.refunded_orders_count} refunded orders</>
+                      )}.
+                    </p>
+                  ) : (
+                    <p className="text-slate-400">Unavailable — no customer/refund evidence returned for this query.</p>
+                  )}
                 </div>
               )}
             </div>

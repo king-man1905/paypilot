@@ -16,6 +16,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 from backend.graph.state import PayPilotState, SupervisorDecision
 from backend.agents.llm_factory import get_llm
+from backend.config import LLM_MAX_RETRIES
 from backend.observability.tracing import trace_span
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,8 @@ Respond ONLY in valid JSON format matching this schema:
   "required_agents": ["<agent_name>", ...],
   "reasoning": "<brief explanation>"
 }
+
+Do NOT output any thinking process, reasoning steps, chain-of-thought, or preamble. Output ONLY the raw JSON object and nothing else.
 """
 
 
@@ -188,7 +191,7 @@ def supervisor_node(state: PayPilotState) -> PayPilotState:
                         HumanMessage(content=prompt_content),
                     ])
 
-                raw_res = execute_with_retry(_call_llm, max_retries=0, on_retry=lambda att, exc, d: record_retry())
+                raw_res = execute_with_retry(_call_llm, max_retries=LLM_MAX_RETRIES, on_retry=lambda att, exc, d: record_retry())
                 lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
                 content = getattr(raw_res, "content", str(raw_res))
                 decision = _parse_llm_json_response(content)

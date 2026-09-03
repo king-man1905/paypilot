@@ -14,7 +14,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [apiKey, setApiKey] = useState<string>(() => {
-    return localStorage.getItem('paypilot_api_key') || 'paypilot-prod-analyst-key';
+    // No hardcoded key fallback: an unconfigured key must stay empty, never a baked-in credential.
+    return localStorage.getItem('paypilot_api_key') || '';
   });
   const [clientId, setClientId] = useState<string>(() => {
     return localStorage.getItem('paypilot_client_id') || 'merchant_enterprise_01';

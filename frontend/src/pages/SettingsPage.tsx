@@ -8,7 +8,6 @@ import {
   Check,
   Eye,
   EyeOff,
-  RefreshCw,
   Plus,
   Sliders,
 } from 'lucide-react';
@@ -70,13 +69,6 @@ export const SettingsPage: React.FC = () => {
     navigator.clipboard.writeText(apiKey);
     setCopiedKey(true);
     setTimeout(() => setCopiedKey(false), 2000);
-  };
-
-  const handleRegenerateKey = () => {
-    const newKey = `paypilot_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
-    setApiKey(newKey);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   return (
@@ -189,13 +181,22 @@ export const SettingsPage: React.FC = () => {
 
           <div>
             <label className="text-xs font-bold text-slate-700 block mb-1.5">Secret API Key</label>
+            <p className="text-[11px] text-slate-400 mb-1.5">
+              Paste the key configured on the backend (Render environment variables). It is stored
+              only in this browser's local storage and sent as the <code>X-API-Key</code> header.
+            </p>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
                   type={showApiKey ? 'text' : 'password'}
-                  readOnly
                   value={apiKey}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-3.5 pr-10 py-2 text-xs font-mono text-slate-800 focus:outline-none"
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    setSavedSuccess(true);
+                    setTimeout(() => setSavedSuccess(false), 2000);
+                  }}
+                  placeholder="Paste your PayPilot API key"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-3.5 pr-10 py-2 text-xs font-mono text-slate-800 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
                 <button
                   type="button"
@@ -219,15 +220,6 @@ export const SettingsPage: React.FC = () => {
                 }
               >
                 {copiedKey ? 'Copied' : 'Copy'}
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={handleRegenerateKey}
-                leftIcon={<RefreshCw className="w-4 h-4" />}
-              >
-                Roll Key
               </Button>
             </div>
           </div>

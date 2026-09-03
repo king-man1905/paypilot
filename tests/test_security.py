@@ -247,3 +247,40 @@ def test_cross_tenant_job_isolation_403_and_admin_bypass_200(client):
 
     app.dependency_overrides.clear()
 
+
+def test_cors_reflects_configured_frontend_origin(client):
+    """Verifies CORS grants the configured production frontend origin, not a bare wildcard."""
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "https://paypilot-frontend-cptp.onrender.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.headers.get("access-control-allow-origin") == "https://paypilot-frontend-cptp.onrender.com"
+
+
+def test_cors_allows_localhost_dev_origin(client):
+    """Verifies local Vite dev server origin remains allowed for development."""
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_cors_rejects_unknown_origin(client):
+    """Verifies CORS does NOT grant access to an arbitrary, unconfigured origin (regression
+    test for the previous allow_origins=["*"] + allow_credentials=True misconfiguration)."""
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "https://evil-attacker-site.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.headers.get("access-control-allow-origin") is None
+
